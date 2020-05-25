@@ -12,23 +12,21 @@ def build_board(size, level, player_spot, enemy_spots):
      # Set player icon
     player = chr(169)
 
+    # Set killed enemy icon
+    killed_enemy = '*'
+
     # Set enemy icon
     enemies = 'X'
 
     # Set player spot and place player
-    # player_spot = [size // 2, size // 2]
     board[player_spot[0]][player_spot[1]] = player
 
-    # Set enemy amount, insuring an even amount
-    # amount_of_enemies = level * 4
-    # if amount_of_enemies % 2 != 0:
-    #     amount_of_enemies += 1
-
-    # Place enemies on board
-    # for num in range(amount_of_enemies):
-    #     x,y = enemy_spot(size)
-    #     board[x][y] = enemies
-    for spot in enemy_spots:
+    for index, spot in enumerate(enemy_spots):
+        current_spot = enemy_spots.pop(index)
+        if spot in enemy_spots:
+            board[spot[0]][spot[1]] = killed_enemy
+        else:
+            enemy_spots.insert(0, current_spot)
         board[spot[0]][spot[1]] = enemies
 
     return [board, player_spot, enemy_spots]
@@ -54,8 +52,6 @@ def game(board_size):
     level = 1
     # Set enemy icon
     enemies = 'X'
-    # Set killed enemy icon
-    killed_enemy = '*'
 
     enemy_array = []
     amount_of_enemies = level * 4
@@ -74,16 +70,16 @@ def game(board_size):
 
     while playing:
         os.system("cls")
+        print_border = (board_size * 2) - 1
+        print(' ' + ('-' * print_border))
         # This will print the board formatted correctly
         for line in board[0]:
-            print(' '.join(line))
+            print('|' + ' '.join(line) + '|')
+        print(' ' + ('-' * print_border))
 
         if keyboard.read_key() in movements:
-            # board[0][player_spot[0]][player_spot[1]] = '0'
             new_coords = move_player(board[1], keyboard.read_key())
             board = build_board(board_size, level, [new_coords[0], new_coords[1]], enemy_spots)
-            # board[0][new_coords[0]][new_coords[1]] = player
-            # board[1] = [new_coords[0], new_coords[1]]
             
     
 
