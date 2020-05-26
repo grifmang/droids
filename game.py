@@ -23,8 +23,9 @@ def build_board(size, level, player_spot, enemy_spots):
 
     for index, spot in enumerate(enemy_spots):
         current_spot = enemy_spots.pop(index)
-        if spot in enemy_spots:
+        if current_spot in enemy_spots:
             board[spot[0]][spot[1]] = killed_enemy
+            continue
         else:
             enemy_spots.insert(0, current_spot)
         board[spot[0]][spot[1]] = enemies
@@ -81,6 +82,10 @@ def game(board_size):
             new_coords = move_player(board[1], keyboard.read_key())
             board = build_board(board_size, level, [new_coords[0], new_coords[1]], enemy_spots)
             
-    
+
+        if new_coords in enemy_spots:
+            print('Game Over.')
+            playing = False
+
 
 game(20)
