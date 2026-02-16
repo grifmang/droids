@@ -1,0 +1,9 @@
+{
+  "name": "droids",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "tsc -p tsconfig.json",
+    "test": "npm run build:web && node --test tests/*.test.js"
+  }
+}
