@@ -1,6 +1,8 @@
 import type { GameState } from './engine.js';
 
-export function buildRunSummaryLink(state: GameState): string {
+export type RunSummary = Pick<GameState, 'score' | 'level' | 'seed' | 'teleports'>;
+
+export function buildRunSummaryLink(state: RunSummary): string {
   const params = new URLSearchParams({
     score: String(state.score),
     level: String(state.level),
@@ -8,6 +10,31 @@ export function buildRunSummaryLink(state: GameState): string {
     teleports: String(state.teleports),
   });
   return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+}
+
+function parsePositiveInt(value: string | null): number | null {
+  if (!value || !/^\d+$/.test(value)) {
+    return null;
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+export function parseRunSummaryLink(url: string): RunSummary | null {
+  const parsedUrl = new URL(url);
+  const score = parsePositiveInt(parsedUrl.searchParams.get('score'));
+  const level = parsePositiveInt(parsedUrl.searchParams.get('level'));
+  const seed = parsePositiveInt(parsedUrl.searchParams.get('seed'));
+  const teleports = parsePositiveInt(parsedUrl.searchParams.get('teleports'));
+
+  if (score === null || level === null || seed === null || teleports === null) {
+    return null;
+  }
+
+  return { score, level, seed, teleports };
 }
 
 export function renderShareCard(state: GameState, canvas: HTMLCanvasElement, preview: HTMLImageElement): void {

@@ -3,6 +3,7 @@ import { buildRunSummaryLink, renderShareCard } from './share.js';
 const HIGH_SCORES_KEY = 'droids.web.highscores.v1';
 const STREAK_KEY = 'droids.web.dailyStreak.v1';
 const REDUCED_MOTION_KEY = 'droids.web.reducedMotion.v1';
+const DAILY_STREAK_INCREMENT_EVENT = 'daily_run_completed';
 function todayIso(date = new Date()) {
     return date.toISOString().slice(0, 10);
 }
@@ -18,6 +19,52 @@ function readJson(key, fallback) {
 function writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
 }
+export function persistLostRun(state, runAlreadyFinalized, read, write, nowIso = new Date().toISOString()) {
+    if (state.status !== 'lost' || runAlreadyFinalized) {
+        return runAlreadyFinalized;
+    }
+    const highscores = read(HIGH_SCORES_KEY, []);
+    highscores.push({
+        score: state.score,
+        level: state.level,
+        seed: state.seed,
+        when: nowIso,
+    });
+    highscores.sort((a, b) => b.score - a.score);
+    write(HIGH_SCORES_KEY, highscores.slice(0, 10));
+    // Product behavior for Week 3: streak increases once when a daily run ends.
+    if (state.seed === dailySeed() && DAILY_STREAK_INCREMENT_EVENT === 'daily_run_completed') {
+        const runDate = todayIso();
+        const streak = read(STREAK_KEY, { lastDate: '', streak: 0, history: [] });
+        if (streak.lastDate !== runDate) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayIso = todayIso(yesterday);
+            streak.streak = streak.lastDate === yesterdayIso ? streak.streak + 1 : 1;
+            streak.lastDate = runDate;
+            streak.history = [runDate, ...streak.history.filter((d) => d !== runDate)].slice(0, 30);
+            write(STREAK_KEY, streak);
+        }
+    }
+    return true;
+}
+export function renderStatusText(state, flags) {
+    const parts = [
+        `Level ${state.level}`,
+        `Score ${state.score}`,
+        `Enemies ${state.enemies.length}`,
+        `Teleports ${state.teleports}`,
+        `Seed ${state.seed}`,
+        `Motion ${flags.reducedMotion ? 'reduced' : 'enhanced'}`,
+    ];
+    if (state.status === 'lost') {
+        parts.push('Game Over');
+    }
+    if (flags.shareCopied) {
+        parts.push('Run summary copied');
+    }
+    return parts.join(' | ');
+}
 export function mountGame() {
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('status');
@@ -31,6 +78,8 @@ export function mountGame() {
     const preview = document.getElementById('share-preview');
     const engine = new DroidsEngine(Date.now());
     const reducedMotion = readJson(REDUCED_MOTION_KEY, false);
+    const statusFlags = { reducedMotion, shareCopied: false };
+    let runFinalized = false;
     reducedMotionToggle.checked = reducedMotion;
     document.body.classList.toggle('reduced-motion', reducedMotion);
     function updateHighScores() {
@@ -40,30 +89,7 @@ export function mountGame() {
             .join('');
     }
     function persistRunIfNeeded() {
-        if (engine.state.status !== 'lost')
-            return;
-        const highscores = readJson(HIGH_SCORES_KEY, []);
-        highscores.push({
-            score: engine.state.score,
-            level: engine.state.level,
-            seed: engine.state.seed,
-            when: new Date().toISOString(),
-        });
-        highscores.sort((a, b) => b.score - a.score);
-        writeJson(HIGH_SCORES_KEY, highscores.slice(0, 10));
-        const runDate = todayIso();
-        const streak = readJson(STREAK_KEY, { lastDate: '', streak: 0, history: [] });
-        if (engine.state.seed === dailySeed()) {
-            if (streak.lastDate !== runDate) {
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                const yesterdayIso = todayIso(yesterday);
-                streak.streak = streak.lastDate === yesterdayIso ? streak.streak + 1 : 1;
-                streak.lastDate = runDate;
-                streak.history = [runDate, ...streak.history.filter((d) => d !== runDate)].slice(0, 30);
-                writeJson(STREAK_KEY, streak);
-            }
-        }
+        runFinalized = persistLostRun(engine.state, runFinalized, readJson, writeJson);
     }
     function render() {
         boardEl.style.gridTemplateColumns = `repeat(${engine.boardSize}, 22px)`;
@@ -90,13 +116,13 @@ export function mountGame() {
             }
         }
         boardEl.innerHTML = cells.join('');
-        const base = `Level ${engine.state.level} | Score ${engine.state.score} | Enemies ${engine.state.enemies.length} | Teleports ${engine.state.teleports} | Seed ${engine.state.seed}`;
-        statusEl.textContent = engine.state.status === 'lost' ? `${base} | Game Over` : base;
+        statusEl.textContent = renderStatusText(engine.state, statusFlags);
         const streak = readJson(STREAK_KEY, { lastDate: '', streak: 0, history: [] });
         historyEl.textContent = `Daily streak: ${streak.streak} day(s) | Recent: ${streak.history.slice(0, 5).join(', ') || 'none'}`;
         updateHighScores();
     }
     function step(key) {
+        statusFlags.shareCopied = false;
         engine.step(key);
         persistRunIfNeeded();
         render();
@@ -111,14 +137,19 @@ export function mountGame() {
     reducedMotionToggle.addEventListener('change', () => {
         writeJson(REDUCED_MOTION_KEY, reducedMotionToggle.checked);
         document.body.classList.toggle('reduced-motion', reducedMotionToggle.checked);
-        statusEl.textContent = `${statusEl.textContent} | Motion ${reducedMotionToggle.checked ? 'reduced' : 'enhanced'}`;
+        statusFlags.reducedMotion = reducedMotionToggle.checked;
+        render();
     });
     newRunBtn.addEventListener('click', () => {
         engine.reset(Date.now());
+        runFinalized = false;
+        statusFlags.shareCopied = false;
         render();
     });
     dailyBtn.addEventListener('click', () => {
         engine.reset(dailySeed());
+        runFinalized = false;
+        statusFlags.shareCopied = false;
         render();
     });
     shareBtn.addEventListener('click', async () => {
@@ -126,7 +157,8 @@ export function mountGame() {
         const summary = buildRunSummaryLink(engine.state);
         if (navigator.clipboard?.writeText) {
             await navigator.clipboard.writeText(summary);
-            statusEl.textContent = `${statusEl.textContent} | Run summary copied`;
+            statusFlags.shareCopied = true;
+            render();
         }
     });
     render();

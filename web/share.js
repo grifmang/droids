@@ -7,6 +7,27 @@ export function buildRunSummaryLink(state) {
     });
     return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
 }
+function parsePositiveInt(value) {
+    if (!value || !/^\d+$/.test(value)) {
+        return null;
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed)) {
+        return null;
+    }
+    return parsed;
+}
+export function parseRunSummaryLink(url) {
+    const parsedUrl = new URL(url);
+    const score = parsePositiveInt(parsedUrl.searchParams.get('score'));
+    const level = parsePositiveInt(parsedUrl.searchParams.get('level'));
+    const seed = parsePositiveInt(parsedUrl.searchParams.get('seed'));
+    const teleports = parsePositiveInt(parsedUrl.searchParams.get('teleports'));
+    if (score === null || level === null || seed === null || teleports === null) {
+        return null;
+    }
+    return { score, level, seed, teleports };
+}
 export function renderShareCard(state, canvas, preview) {
     const ctx = canvas.getContext('2d');
     if (!ctx) {
