@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Droids Web</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <h1>Droids</h1>
+    <div class="toolbar">
+      <button id="new-run">New Run</button>
+      <button id="daily">Daily Challenge</button>
+      <button id="share">Share Result</button>
+    </div>
+    <p id="status"></p>
+    <div id="board" class="board" aria-label="Droids board"></div>
+    <p class="help">Keys: qwe/asd/zxc to move, . wait, t safe teleport, r risky teleport.</p>
+    <canvas id="share-card" width="700" height="360" class="hidden"></canvas>
+    <img id="share-preview" alt="share preview" class="hidden" />
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

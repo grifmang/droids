@@ -1,0 +1,62 @@
+:root {
+  font-family: Inter, system-ui, Arial, sans-serif;
+  color: #e6edf3;
+  background: #0f172a;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at top, #1e293b, #020617 70%);
+}
+
+.app {
+  width: min(95vw, 800px);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+button {
+  background: #334155;
+  border: 1px solid #64748b;
+  color: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(20, 22px);
+  gap: 2px;
+  width: fit-content;
+  background: #111827;
+  border: 1px solid #475569;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.cell {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+  background: #1f2937;
+}
+
+.player { color: #22d3ee; }
+.enemy { color: #fb7185; }
+.wreck { color: #facc15; }
+
+.help { color: #94a3b8; }
+.hidden { display: none; }
+#share-preview { margin-top: 10px; max-width: 100%; border-radius: 8px; border: 1px solid #475569; }

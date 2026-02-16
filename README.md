@@ -1,12 +1,25 @@
-Childhood game, originally written in BASIC for VAX Cluster machines, remade in Python.
+Childhood game, originally written in BASIC for VAX Cluster machines, remade in Python and now also playable on the web.
 
-## Running
+## Week 1 Delivered (Terminal)
+
+- Refactored into a game engine + game state model for cleaner logic separation.
+- Added safe teleport (`t`) with limited charges and risky teleport (`r`) with unlimited use.
+- Added deterministic seeded runs (`--seed`).
+- Added local high score persistence (`highscores.json`).
+
+### Run terminal game
 
 ```bash
 python3 game.py
 ```
 
-## How to play
+Useful options:
+
+```bash
+python3 game.py --seed 1234 --board-size 20 --safe-teleports 3
+```
+
+### Terminal controls
 
 - You are `@`.
 - Enemies are `X`.
@@ -20,6 +33,26 @@ z s c
 ```
 
 - `.` waits in place.
+- `t` safe teleport (limited uses).
+- `r` risky teleport (unlimited).
 - `x` quits.
-- If enemies collide with each other (or wrecks), they are destroyed.
-- If an enemy or wreck reaches you, the game ends.
+
+## Week 2 Delivered (Web)
+
+- Added browser implementation under `web/` with keyboard controls.
+- Added daily challenge mode (date-based deterministic seed).
+- Added share card generation (creates an image preview from current run).
+
+### Run web game
+
+```bash
+cd web
+python3 -m http.server 8000
+```
+
+Then open: <http://localhost:8000>
+
+### Web controls
+
+- Use keyboard: `qwe/asd/zxc`, `.` to wait, `t` safe teleport, `r` risky teleport.
+- Use buttons for **New Run**, **Daily Challenge**, and **Share Result**.
