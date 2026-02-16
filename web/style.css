@@ -13,22 +13,40 @@ body {
 }
 
 .app {
-  width: min(95vw, 800px);
+  width: min(95vw, 900px);
 }
 
 .toolbar {
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
-button {
+button,
+.toggle {
   background: #334155;
   border: 1px solid #64748b;
   color: white;
   padding: 8px 10px;
   border-radius: 8px;
+}
+
+button {
   cursor: pointer;
+}
+
+button:focus-visible,
+.toggle:focus-within,
+#board:focus-visible {
+  outline: 3px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .board {
@@ -40,6 +58,7 @@ button {
   border: 1px solid #475569;
   padding: 8px;
   border-radius: 8px;
+  transition: transform 180ms ease;
 }
 
 .cell {
@@ -51,6 +70,7 @@ button {
   font-weight: 700;
   border-radius: 4px;
   background: #1f2937;
+  transition: transform 180ms ease;
 }
 
 .player { color: #22d3ee; }
@@ -60,3 +80,8 @@ button {
 .help { color: #94a3b8; }
 .hidden { display: none; }
 #share-preview { margin-top: 10px; max-width: 100%; border-radius: 8px; border: 1px solid #475569; }
+
+body.reduced-motion .board,
+body.reduced-motion .cell {
+  transition: none;
+}

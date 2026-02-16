@@ -13,13 +13,21 @@
       <button id="new-run">New Run</button>
       <button id="daily">Daily Challenge</button>
       <button id="share">Share Result</button>
+      <label class="toggle" for="reduced-motion">
+        <input id="reduced-motion" type="checkbox" /> Reduced Motion
+      </label>
     </div>
-    <p id="status"></p>
-    <div id="board" class="board" aria-label="Droids board"></div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p id="history" role="status" aria-live="polite"></p>
+    <div id="board" class="board" aria-label="Droids board" tabindex="0"></div>
+    <section aria-label="Highscores">
+      <h2>Local Highscores</h2>
+      <ul id="highscores"></ul>
+    </section>
     <p class="help">Keys: qwe/asd/zxc to move, . wait, t safe teleport, r risky teleport.</p>
     <canvas id="share-card" width="700" height="360" class="hidden"></canvas>
-    <img id="share-preview" alt="share preview" class="hidden" />
+    <img id="share-preview" alt="Share preview" class="hidden" />
   </main>
-  <script src="game.js"></script>
+  <script type="module" src="game.js"></script>
 </body>
 </html>

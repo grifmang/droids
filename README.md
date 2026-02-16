@@ -56,3 +56,18 @@ Then open: <http://localhost:8000>
 
 - Use keyboard: `qwe/asd/zxc`, `.` to wait, `t` safe teleport, `r` risky teleport.
 - Use buttons for **New Run**, **Daily Challenge**, and **Share Result**.
+
+
+## Week 3 Delivered (Web TypeScript)
+
+- Migrated web game logic to TypeScript modules: `engine.ts`, `ui.ts`, `share.ts`.
+- Added unit tests for enemy movement, collision resolution, and safe teleport filtering.
+- Added localStorage-backed web highscores and daily streak history.
+- Added accessibility polish: visible focus rings, reduced-motion toggle, and ARIA live status updates.
+
+### Web development checks
+
+```bash
+npm run build:web
+npm test
+```
