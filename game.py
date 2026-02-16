@@ -1,112 +1,173 @@
-import random
 import os
-import numpy as np
-import keyboard
+import random
+from typing import List, Sequence, Set, Tuple
 
-def build_board(size, level, player_spot, enemy_spots):
-    # Construct a 2D array for game board
-    board = []
-    for x in range(size):
-        board.append([' ' for y in range(size)])
+EMPTY = " "
+PLAYER = "@"
+ENEMY = "X"
+WRECK = "*"
 
-     # Set player icon
-    player = chr(169)
+MOVE_MAP = {
+    "w": (-1, 0),
+    "a": (0, -1),
+    "s": (1, 0),
+    "d": (0, 1),
+    "q": (-1, -1),
+    "e": (-1, 1),
+    "z": (1, -1),
+    "c": (1, 1),
+    ".": (0, 0),
+}
 
-    # Set killed enemy icon
-    killed_enemy = '*'
 
-    # Set enemy icon
-    enemies = 'X'
-    enemy_locations = []
+def clear_screen() -> None:
+    os.system("cls" if os.name == "nt" else "clear")
 
-    # Set player spot and place player
-    board[player_spot[0]][player_spot[1]] = player
 
-    for index, spot in enumerate(enemy_spots):
-        current_spot = enemy_spots.pop(index)
-        if current_spot in enemy_spots:
-            board[spot[0]][spot[1]] = killed_enemy
+def in_bounds(spot: Tuple[int, int], board_size: int) -> bool:
+    return 0 <= spot[0] < board_size and 0 <= spot[1] < board_size
+
+
+def clamp_player_move(player_spot: Tuple[int, int], delta: Tuple[int, int], board_size: int) -> Tuple[int, int]:
+    x = min(max(player_spot[0] + delta[0], 0), board_size - 1)
+    y = min(max(player_spot[1] + delta[1], 0), board_size - 1)
+    return (x, y)
+
+
+def enemy_spot(board_size: int, blocked: Set[Tuple[int, int]]) -> Tuple[int, int]:
+    while True:
+        spot = (random.randint(0, board_size - 1), random.randint(0, board_size - 1))
+        if spot not in blocked:
+            return spot
+
+
+def move_enemy(player_spot: Tuple[int, int], enemy: Tuple[int, int]) -> Tuple[int, int]:
+    dx = 0 if enemy[0] == player_spot[0] else (1 if player_spot[0] > enemy[0] else -1)
+    dy = 0 if enemy[1] == player_spot[1] else (1 if player_spot[1] > enemy[1] else -1)
+    return (enemy[0] + dx, enemy[1] + dy)
+
+
+def spawn_enemies(level: int, board_size: int, player_spot: Tuple[int, int]) -> List[Tuple[int, int]]:
+    amount_of_enemies = max(2, level * 4)
+    spots: List[Tuple[int, int]] = []
+    blocked = {player_spot}
+    for _ in range(amount_of_enemies):
+        spot = enemy_spot(board_size, blocked)
+        spots.append(spot)
+        blocked.add(spot)
+    return spots
+
+
+def resolve_enemy_collisions(
+    moved_enemies: Sequence[Tuple[int, int]],
+    wrecks: Set[Tuple[int, int]],
+) -> Tuple[List[Tuple[int, int]], Set[Tuple[int, int]], int]:
+    next_wrecks = set(wrecks)
+    counts = {}
+    for enemy in moved_enemies:
+        counts[enemy] = counts.get(enemy, 0) + 1
+
+    survivors: List[Tuple[int, int]] = []
+    destroyed = 0
+    for enemy in moved_enemies:
+        if enemy in next_wrecks:
+            destroyed += 1
             continue
-        else:
-            enemy_spots.insert(0, current_spot)
-        board[spot[0]][spot[1]] = enemies
-        enemy_locations.append(board[spot[0]][spot[1]])
+        if counts[enemy] > 1:
+            next_wrecks.add(enemy)
+            destroyed += 1
+            continue
+        survivors.append(enemy)
 
-    return [board, player_spot, enemy_spots, enemy_locations]
+    return survivors, next_wrecks, destroyed
 
-def move_player(player_spot, key):
-    x_movements = {'up': -1, 'down': 1}
-    y_movements = { 'left': -1, 'right': 1}
 
-    if key in x_movements:
-        return [player_spot[0] + x_movements[key], player_spot[1]]
-    elif key in y_movements:
-        return [player_spot[0], player_spot[1] + y_movements[key]]
+def build_board(
+    size: int,
+    player_spot: Tuple[int, int],
+    enemy_spots: Sequence[Tuple[int, int]],
+    wrecks: Set[Tuple[int, int]],
+) -> List[List[str]]:
+    board = [[EMPTY for _ in range(size)] for _ in range(size)]
+    for w in wrecks:
+        if in_bounds(w, size):
+            board[w[0]][w[1]] = WRECK
+    for e in enemy_spots:
+        if in_bounds(e, size):
+            board[e[0]][e[1]] = ENEMY
+    board[player_spot[0]][player_spot[1]] = PLAYER
+    return board
 
-def enemy_spot(board_size):
-    # Function to choose a random row/col for enemy placement
-    x = random.randint(0, board_size - 1)
-    y = random.randint(0, board_size - 1)
-    return [x,y]
 
-def move_enemy(player_spot, enemy_spot, board_length):
-    # for num in enemy_spot:
-    #     print(num)
-    if player_spot[0] < enemy_spot[0] and enemy_spot[0] != 0:
-        enemy_spot[0] -= 1
-    if player_spot[0] > enemy_spot[0] and enemy_spot[0] > board_length:
-        enemy_spot[0] += 1
-    if player_spot[1] < enemy_spot[1] and enemy_spot[1] != 0:
-        enemy_spot[1] -= 1
-    if player_spot[1] > enemy_spot[1] and enemy_spot[1] > board_length:
-        enemy_spot[1] += 1
-    return enemy_spot
+def print_board(board: Sequence[Sequence[str]], level: int, score: int, enemies_left: int) -> None:
+    size = len(board)
+    print(f"Level {level} | Score {score} | Enemies left {enemies_left}")
+    print(" " + "-" * ((size * 2) - 1))
+    for line in board:
+        print("|" + " ".join(line) + "|")
+    print(" " + "-" * ((size * 2) - 1))
+    print("Move: q w e / a . d / z s c | x to quit")
 
-def game(board_size):
-    player = chr(169)
-    # Set player level
+
+def read_move() -> str:
+    while True:
+        move = input("> ").strip().lower()
+        if move in MOVE_MAP or move == "x":
+            return move
+        print("Invalid move. Use q,w,e,a,s,d,z,c,., or x.")
+
+
+def play_level(board_size: int, level: int, score: int) -> Tuple[bool, int]:
+    player_spot = (board_size // 2, board_size // 2)
+    enemies = spawn_enemies(level, board_size, player_spot)
+    wrecks: Set[Tuple[int, int]] = set()
+
+    while True:
+        clear_screen()
+        board = build_board(board_size, player_spot, enemies, wrecks)
+        print_board(board, level, score, len(enemies))
+
+        move = read_move()
+        if move == "x":
+            return False, score
+
+        player_spot = clamp_player_move(player_spot, MOVE_MAP[move], board_size)
+        if player_spot in enemies or player_spot in wrecks:
+            return False, score
+
+        moved_enemies = [move_enemy(player_spot, enemy) for enemy in enemies]
+        if player_spot in moved_enemies:
+            return False, score
+
+        enemies, wrecks, destroyed = resolve_enemy_collisions(moved_enemies, wrecks)
+        score += destroyed * 10
+
+        if not enemies:
+            score += level * 25
+            return True, score
+
+
+def game(board_size: int = 20) -> None:
+    if board_size < 5:
+        raise ValueError("Board size must be at least 5.")
+
     level = 1
-    # Set enemy icon
-    enemies = 'X'
+    score = 0
 
-    enemy_array = []
-    amount_of_enemies = level * 4
-    if amount_of_enemies % 2 != 0:
-        amount_of_enemies += 1
-    for num in range(amount_of_enemies):
-        enemy_array.append(enemy_spot(board_size))
+    while True:
+        survived, score = play_level(board_size, level, score)
+        clear_screen()
+        if survived:
+            print(f"Level {level} clear! Current score: {score}")
+            input("Press Enter for next level...")
+            level += 1
+            continue
 
-    # Get board
-    board = build_board(board_size, level, [board_size // 2, board_size // 2],  enemy_array)
-    player_spot = board[1]
-    enemy_spots = board[2]
-    enemy_locations = board[3]
-
-    playing = True
-    movements = {'up':'up', 'down':'down', 'left':'left', 'right':'right'}
-
-    while playing:
-        os.system("cls")
-        print_border = (board_size * 2) - 1
-        print(' ' + ('-' * print_border))
-        # This will print the board formatted correctly
-        for line in board[0]:
-            print('|' + ' '.join(line) + '|')
-        print(' ' + ('-' * print_border))
-
-        if keyboard.read_key() in movements:
-            new_coords = move_player(board[1], keyboard.read_key())
-            board = build_board(board_size, level, [new_coords[0], new_coords[1]], enemy_spots)
-            # print(enemy_spots)
-            for s in enemy_spots:
-                # print(s)
-                s = move_enemy(board[1], s, len(board[0]))
-            # board = build_board(board_size, level, [new_coords[0], new_coords[1]], enemy_spots)
-            
-        
-        if new_coords in enemy_spots:
-            print('Game Over.')
-            playing = False
+        print("Game Over.")
+        print(f"Final level: {level}")
+        print(f"Final score: {score}")
+        break
 
 
-game(20)
+if __name__ == "__main__":
+    game(20)
