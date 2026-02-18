@@ -303,6 +303,7 @@
     }
 
     function drawEnemy(row, col, cellSize) {
+      ctx.save();
       const x = col * cellSize;
       const y = row * cellSize;
       const pad = cellSize * 0.2;
@@ -317,9 +318,11 @@
       ctx.moveTo(x + cellSize - pad, y + pad);
       ctx.lineTo(x + pad, y + cellSize - pad);
       ctx.stroke();
+      ctx.restore();
     }
 
     function drawKilled(row, col, cellSize) {
+      ctx.save();
       ctx.fillStyle = '#888';
       ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
       ctx.fillStyle = '#fff';
@@ -327,6 +330,7 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('*', col * cellSize + cellSize / 2, row * cellSize + cellSize / 2);
+      ctx.restore();
     }
 
     function drawGameOver() {
@@ -340,7 +344,7 @@
       ctx.fillText('GAME OVER', size / 2, size * 0.38);
       ctx.font = `${size * 0.055}px monospace`;
       ctx.fillText(`Score: ${state.score}`, size / 2, size * 0.52);
-      if (state.mode === 'survival' && state.score >= state.bestScore) {
+      if (state.mode === 'survival' && state.score > state.bestScore) {
         ctx.fillStyle = '#ffcc00';
         ctx.fillText('NEW BEST!', size / 2, size * 0.62);
         ctx.fillStyle = '#fff';
