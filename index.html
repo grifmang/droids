@@ -185,8 +185,8 @@
         catch { return 0; }
       })(),
       phase: 'menu',           // 'menu' | 'playing' | 'gameover'
-      boardSize: 10,
-      playerPos: [5, 5],
+      boardSize: 20,
+      playerPos: [10, 10],
       enemies: [],             // array of [row, col]
       killed: [],              // array of [row, col] (enemy-enemy collision wreckage)
       moveCount: 0,            // survival mode: track moves for enemy spawning
@@ -199,7 +199,7 @@
       state.score = 0;
       state.moveCount = 0;
       state.phase = 'playing';
-      state.boardSize = 10;
+      state.boardSize = 20;
       resetLevel();
       document.getElementById('mode-select').style.display = 'none';
       document.getElementById('keypad').style.display = 'grid';
@@ -433,7 +433,7 @@
 
     function drawAttract() {
       const size = canvas.width;
-      const boardSize = 10;
+      const boardSize = 20;
       const pad = Math.max(3, Math.floor(size * 0.015));
       const inner = size - pad * 2;
       const cellSize = inner / boardSize;
@@ -445,9 +445,9 @@
       ctx.lineWidth = 1;
       ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
 
-      drawBoard(boardSize, [5, 5],
-        [[1,1],[2,3],[7,8],[8,2],[3,7]],
-        [[4,4],[6,6]],
+      drawBoard(boardSize, [10, 10],
+        [[2,2],[4,6],[15,16],[16,4],[6,14]],
+        [[8,8],[12,12]],
         pad, cellSize);
     }
 
