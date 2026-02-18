@@ -39,9 +39,18 @@
     #game-container {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       width: 100%;
       max-width: 1024px;
+      flex: 1;
+    }
+    #play-layout {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 16px;
+      width: 100%;
+      padding: 10px 12px 0;
       flex: 1;
     }
     #hud {
@@ -62,10 +71,11 @@
     #mode-select {
       display: flex;
       gap: 12px;
-      padding: 16px 20px;
+      padding: 16px 0;
       flex-direction: column;
       align-items: flex-start;
-      width: 100%;
+      width: 220px;
+      flex-shrink: 0;
     }
     #mode-select h2 {
       font-size: 20px;
@@ -99,7 +109,8 @@
       grid-template-rows: repeat(3, 44px);
       gap: 4px;
       padding: 8px;
-      margin-top: 4px;
+      margin-top: 0;
+      flex-shrink: 0;
     }
     .kp-btn {
       background: #000;
@@ -117,6 +128,19 @@
     }
     .kp-btn:hover, .kp-btn:active { background: #0a1a00; border-color: #33ff33; }
     .kp-btn.center { color: #1a6600; border-color: #1a3300; }
+
+    @media (max-width: 920px) {
+      #play-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+      #mode-select {
+        width: min(100%, 320px);
+      }
+      #keypad {
+        margin-top: 8px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -128,23 +152,25 @@
       <span id="score-display"></span>
       <span id="best-display"></span>
     </div>
-    <canvas id="canvas"></canvas>
-    <div id="keypad">
-      <button class="kp-btn" data-dir="up-left">↖</button>
-      <button class="kp-btn" data-dir="up">↑</button>
-      <button class="kp-btn" data-dir="up-right">↗</button>
-      <button class="kp-btn" data-dir="left">←</button>
-      <button class="kp-btn center" data-dir="stay">·</button>
-      <button class="kp-btn" data-dir="right">→</button>
-      <button class="kp-btn" data-dir="down-left">↙</button>
-      <button class="kp-btn" data-dir="down">↓</button>
-      <button class="kp-btn" data-dir="down-right">↘</button>
-    </div>
-    <div id="mode-select">
-      <h2>DROIDS v1.0</h2>
-      <p>// trick enemies into colliding. survive.</p>
-      <button class="mode-btn" id="btn-levels">LEVELS</button>
-      <button class="mode-btn" id="btn-survival">SURVIVAL</button>
+    <div id="play-layout">
+      <div id="mode-select">
+        <h2>DROIDS v1.0</h2>
+        <p>// trick enemies into colliding. survive.</p>
+        <button class="mode-btn" id="btn-levels">LEVELS</button>
+        <button class="mode-btn" id="btn-survival">SURVIVAL</button>
+      </div>
+      <canvas id="canvas"></canvas>
+      <div id="keypad">
+        <button class="kp-btn" data-dir="up-left">↖</button>
+        <button class="kp-btn" data-dir="up">↑</button>
+        <button class="kp-btn" data-dir="up-right">↗</button>
+        <button class="kp-btn" data-dir="left">←</button>
+        <button class="kp-btn center" data-dir="stay">·</button>
+        <button class="kp-btn" data-dir="right">→</button>
+        <button class="kp-btn" data-dir="down-left">↙</button>
+        <button class="kp-btn" data-dir="down">↓</button>
+        <button class="kp-btn" data-dir="down-right">↘</button>
+      </div>
     </div>
   </div>
   <div id="ad-banner-bottom" class="ad-banner" data-ad-slot="bottom">[ advertisement ]</div>
@@ -279,15 +305,35 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    const KEYPAD_HEIGHT = 156; // 3 rows × 44px buttons + 2×4px gaps + 2×8px padding
+    const KEYPAD_WIDTH = 156; // 3 columns × 44px buttons + 2×4px gaps + 2×8px padding
     const VAX_MONITOR_MAX_SIZE = 1024;
 
     function resizeCanvas() {
+      const playLayout = document.getElementById('play-layout');
+      const modeSelect = document.getElementById('mode-select');
+      const keypad = document.getElementById('keypad');
       const adHeight = 60 * 2 + 40; // top banner + bottom banner + hud approx
-      const kpH = (state.phase === 'playing' || state.phase === 'gameover') ? KEYPAD_HEIGHT : 0;
+      const availableHeight = window.innerHeight - adHeight;
+      let availableWidth = window.innerWidth;
+
+      const isDesktopLayout = window.innerWidth > 920;
+      if (isDesktopLayout && playLayout) {
+        const layoutStyles = window.getComputedStyle(playLayout);
+        const gap = parseFloat(layoutStyles.columnGap || layoutStyles.gap || '16') || 16;
+        const modeVisible = modeSelect && window.getComputedStyle(modeSelect).display !== 'none';
+        const keypadVisible = keypad && window.getComputedStyle(keypad).display !== 'none';
+
+        const menuWidth = modeVisible ? modeSelect.offsetWidth : 0;
+        const keypadWidth = keypadVisible ? KEYPAD_WIDTH : 0;
+        const visibleColumns = 1 + (modeVisible ? 1 : 0) + (keypadVisible ? 1 : 0);
+        const totalGap = gap * Math.max(0, visibleColumns - 1);
+
+        availableWidth = playLayout.clientWidth - menuWidth - keypadWidth - totalGap;
+      }
+
       const available = Math.min(
-        window.innerWidth,
-        window.innerHeight - adHeight - kpH,
+        availableWidth,
+        availableHeight,
         VAX_MONITOR_MAX_SIZE
       );
       canvas.width = Math.max(80, available);
