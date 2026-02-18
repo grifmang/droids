@@ -143,7 +143,8 @@
       state.enemies = [];
       const count = state.level * 4;
       for (let i = 0; i < count; i++) {
-        state.enemies.push(randomPos(state.boardSize, state.playerPos));
+        const exclude = [state.playerPos, ...state.enemies];
+        state.enemies.push(randomPos(state.boardSize, exclude));
       }
     }
 
@@ -223,10 +224,6 @@
 
     function isPlayerCaught(playerPos, enemies) {
       return enemies.some(e => e[0] === playerPos[0] && e[1] === playerPos[1]);
-    }
-
-    function isPlayerOnKilled(playerPos, killed) {
-      return killed.some(k => k[0] === playerPos[0] && k[1] === playerPos[1]);
     }
 
     // ─── Canvas ──────────────────────────────────────────────────────────────────
@@ -397,7 +394,7 @@
         state.score++;
         state.moveCount++;
         if (state.moveCount % 20 === 0) {
-          state.enemies.push(randomPos(state.boardSize, state.playerPos));
+          state.enemies.push(randomPos(state.boardSize, [state.playerPos, ...state.enemies]));
         }
       }
 
@@ -475,6 +472,8 @@
     function restartGame() {
       document.getElementById('mode-select').style.display = 'flex';
       state.phase = 'menu';
+      state.score = 0;
+      state.level = 1;
       drawAttract();
       updateHud();
     }
