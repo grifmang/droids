@@ -105,7 +105,67 @@
   </div>
   <div id="ad-banner-bottom" class="ad-banner" data-ad-slot="bottom">Advertisement</div>
   <script>
-    // GAME LOGIC GOES HERE (Tasks 2-8)
+    // ─── State ───────────────────────────────────────────────────────────────────
+    const state = {
+      mode: 'levels',          // 'levels' | 'survival'
+      level: 1,
+      score: 0,
+      bestScore: parseInt(localStorage.getItem('droids_best_score') || '0'),
+      phase: 'menu',           // 'menu' | 'playing' | 'gameover'
+      boardSize: 10,
+      playerPos: [5, 5],
+      enemies: [],             // array of [row, col]
+      killed: [],              // array of [row, col] (enemy-enemy collision wreckage)
+      moveCount: 0,            // survival mode: track moves for enemy spawning
+    };
+
+    // ─── Init ────────────────────────────────────────────────────────────────────
+    function initGame(mode) {
+      state.mode = mode;
+      state.level = 1;
+      state.score = 0;
+      state.moveCount = 0;
+      state.phase = 'playing';
+      state.boardSize = 10;
+      resetLevel();
+      document.getElementById('mode-select').style.display = 'none';
+      updateHud();
+    }
+
+    function resetLevel() {
+      const mid = Math.floor(state.boardSize / 2);
+      state.playerPos = [mid, mid];
+      state.killed = [];
+      state.enemies = [];
+      const count = state.level * 4;
+      for (let i = 0; i < count; i++) {
+        state.enemies.push(randomPos(state.boardSize, state.playerPos));
+      }
+    }
+
+    function randomPos(boardSize, exclude) {
+      let pos;
+      do {
+        pos = [
+          Math.floor(Math.random() * boardSize),
+          Math.floor(Math.random() * boardSize),
+        ];
+      } while (exclude && pos[0] === exclude[0] && pos[1] === exclude[1]);
+      return pos;
+    }
+
+    function updateHud() {
+      const modeText = state.mode === 'levels' ? 'LEVELS' : 'SURVIVAL';
+      document.getElementById('mode-label').textContent = modeText;
+      document.getElementById('level-display').textContent =
+        state.mode === 'levels' ? `Level ${state.level}` : '';
+      document.getElementById('score-display').textContent = `Score: ${state.score}`;
+      document.getElementById('best-display').textContent =
+        state.mode === 'survival' ? `Best: ${state.bestScore}` : '';
+    }
+
+    document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
+    document.getElementById('btn-survival').addEventListener('click', () => initGame('survival'));
   </script>
 </body>
 </html>
