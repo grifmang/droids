@@ -371,6 +371,61 @@
       [[4,4],[6,6]].forEach(([r,c]) => drawKilled(r,c,cellSize));
     }
 
+    // ─── Game Step ───────────────────────────────────────────────────────────────
+    function step(dir) {
+      if (state.phase !== 'playing') return;
+
+      // 1. Move player
+      state.playerPos = movePlayer(state.playerPos, dir, state.boardSize);
+
+      // 2. Move all enemies toward player
+      state.enemies = state.enemies.map(e => moveEnemy(e, state.playerPos, state.boardSize));
+
+      // 3. Detect enemy-enemy collisions
+      const { survivors, newKilled } = detectCollisions(state.enemies);
+      state.enemies = survivors;
+      state.killed = [...state.killed, ...newKilled];
+
+      // 4. Check if player caught by an enemy
+      if (isPlayerCaught(state.playerPos, state.enemies)) {
+        gameOver();
+        return;
+      }
+
+      // 5. Survival mode: increment score and spawn enemies
+      if (state.mode === 'survival') {
+        state.score++;
+        state.moveCount++;
+        if (state.moveCount % 20 === 0) {
+          state.enemies.push(randomPos(state.boardSize, state.playerPos));
+        }
+      }
+
+      // 6. Levels mode: check if all enemies cleared
+      if (state.mode === 'levels' && state.enemies.length === 0) {
+        state.level++;
+        state.score = state.level - 1;
+        resetLevel();
+      }
+
+      updateHud();
+      redraw();
+    }
+
+    function gameOver() {
+      state.phase = 'gameover';
+      if (state.mode === 'survival' && state.score > state.bestScore) {
+        state.bestScore = state.score;
+        try {
+          localStorage.setItem('droids_best_score', String(state.bestScore));
+        } catch {
+          // localStorage unavailable (private mode, quota, etc.) — score won't persist
+        }
+      }
+      updateHud();
+      redraw();
+    }
+
     // Initial canvas size + attract screen
     resizeCanvas();
   </script>
