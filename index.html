@@ -23,7 +23,7 @@
     }
     .ad-banner {
       width: 100%;
-      max-width: 500px;
+      max-width: 1024px;
       height: 60px;
       background: #000;
       border-top: 1px solid #1a3300;
@@ -41,7 +41,7 @@
       flex-direction: column;
       align-items: center;
       width: 100%;
-      max-width: 500px;
+      max-width: 1024px;
       flex: 1;
     }
     #hud {
@@ -280,6 +280,7 @@
     const ctx = canvas.getContext('2d');
 
     const KEYPAD_HEIGHT = 156; // 3 rows × 44px buttons + 2×4px gaps + 2×8px padding
+    const VAX_MONITOR_MAX_SIZE = 1024;
 
     function resizeCanvas() {
       const adHeight = 60 * 2 + 40; // top banner + bottom banner + hud approx
@@ -287,7 +288,7 @@
       const available = Math.min(
         window.innerWidth,
         window.innerHeight - adHeight - kpH,
-        500
+        VAX_MONITOR_MAX_SIZE
       );
       canvas.width = Math.max(80, available);
       canvas.height = Math.max(80, available);
