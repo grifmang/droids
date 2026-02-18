@@ -110,7 +110,10 @@
       mode: 'levels',          // 'levels' | 'survival'
       level: 1,
       score: 0,
-      bestScore: parseInt(localStorage.getItem('droids_best_score') || '0'),
+      bestScore: (function() {
+        try { return parseInt(localStorage.getItem('droids_best_score') || '0'); }
+        catch { return 0; }
+      })(),
       phase: 'menu',           // 'menu' | 'playing' | 'gameover'
       boardSize: 10,
       playerPos: [5, 5],
@@ -144,13 +147,21 @@
     }
 
     function randomPos(boardSize, exclude) {
+      // exclude can be a single [row,col] or an array of [row,col]
+      const excludeList = Array.isArray(exclude) && Array.isArray(exclude[0])
+        ? exclude
+        : (exclude ? [exclude] : []);
       let pos;
+      let attempts = 0;
+      const maxAttempts = boardSize * boardSize * 4;
       do {
         pos = [
           Math.floor(Math.random() * boardSize),
           Math.floor(Math.random() * boardSize),
         ];
-      } while (exclude && pos[0] === exclude[0] && pos[1] === exclude[1]);
+        attempts++;
+        if (attempts > maxAttempts) break;
+      } while (excludeList.some(e => e[0] === pos[0] && e[1] === pos[1]));
       return pos;
     }
 
