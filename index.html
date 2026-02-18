@@ -93,6 +93,30 @@
     .mode-btn::before { content: '> '; color: #1a6600; }
     .mode-btn:hover, .mode-btn:active { background: #0a1a00; border-color: #33ff33; }
     .mode-btn:focus-visible { outline: 1px solid #33ff33; outline-offset: 2px; }
+    #keypad {
+      display: none;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(3, 44px);
+      gap: 4px;
+      padding: 8px;
+      margin-top: 4px;
+    }
+    .kp-btn {
+      background: #000;
+      color: #33ff33;
+      border: 1px solid #336600;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .kp-btn:hover, .kp-btn:active { background: #0a1a00; border-color: #33ff33; }
+    .kp-btn.center { color: #1a6600; border-color: #1a3300; }
   </style>
 </head>
 <body>
@@ -105,6 +129,17 @@
       <span id="best-display"></span>
     </div>
     <canvas id="canvas"></canvas>
+    <div id="keypad">
+      <button class="kp-btn" data-dir="up-left">↖</button>
+      <button class="kp-btn" data-dir="up">↑</button>
+      <button class="kp-btn" data-dir="up-right">↗</button>
+      <button class="kp-btn" data-dir="left">←</button>
+      <button class="kp-btn center" data-dir="stay">·</button>
+      <button class="kp-btn" data-dir="right">→</button>
+      <button class="kp-btn" data-dir="down-left">↙</button>
+      <button class="kp-btn" data-dir="down">↓</button>
+      <button class="kp-btn" data-dir="down-right">↘</button>
+    </div>
     <div id="mode-select">
       <h2>DROIDS v1.0</h2>
       <p>// trick enemies into colliding. survive.</p>
@@ -141,8 +176,9 @@
       state.boardSize = 10;
       resetLevel();
       document.getElementById('mode-select').style.display = 'none';
+      document.getElementById('keypad').style.display = 'grid';
       updateHud();
-      redraw();
+      resizeCanvas();
     }
 
     function resetLevel() {
@@ -193,7 +229,11 @@
 
     function movePlayer(pos, dir, boardSize) {
       const [row, col] = pos;
-      const moves = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
+      const moves = {
+        'up-left':   [-1, -1], 'up':   [-1, 0], 'up-right':   [-1, 1],
+        'left':      [0, -1],  'stay': [0, 0],   'right':      [0, 1],
+        'down-left': [1, -1],  'down': [1, 0],   'down-right': [1, 1],
+      };
       if (!moves[dir]) return pos;
       const [dr, dc] = moves[dir];
       const newRow = Math.max(0, Math.min(boardSize - 1, row + dr));
@@ -239,15 +279,18 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
+    const KEYPAD_HEIGHT = 156; // 3 rows × 44px buttons + 2×4px gaps + 2×8px padding
+
     function resizeCanvas() {
       const adHeight = 60 * 2 + 40; // top banner + bottom banner + hud approx
+      const kpH = (state.phase === 'playing' || state.phase === 'gameover') ? KEYPAD_HEIGHT : 0;
       const available = Math.min(
         window.innerWidth,
-        window.innerHeight - adHeight,
+        window.innerHeight - adHeight - kpH,
         500
       );
-      canvas.width = available;
-      canvas.height = available;
+      canvas.width = Math.max(80, available);
+      canvas.height = Math.max(80, available);
       if (state.phase === 'playing' || state.phase === 'gameover') redraw();
       else drawAttract();
     }
@@ -419,8 +462,12 @@
     // ─── Input ───────────────────────────────────────────────────────────────────
     const KEY_MAP = {
       ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-      w: 'up', s: 'down', a: 'left', d: 'right',
-      W: 'up', S: 'down', A: 'left', D: 'right',
+      q: 'up-left',   w: 'up',   e: 'up-right',
+      a: 'left',      s: 'stay', d: 'right',
+      z: 'down-left', x: 'down', c: 'down-right',
+      Q: 'up-left',   W: 'up',   E: 'up-right',
+      A: 'left',      S: 'stay', D: 'right',
+      Z: 'down-left', X: 'down', C: 'down-right',
     };
 
     document.addEventListener('keydown', (e) => {
@@ -445,6 +492,8 @@
       touchStartY = e.changedTouches[0].clientY;
     }, { passive: false });
 
+    const SWIPE_DIRS = ['right', 'down-right', 'down', 'down-left', 'left', 'up-left', 'up', 'up-right'];
+
     canvas.addEventListener('touchend', (e) => {
       e.preventDefault();
       if (state.phase === 'gameover') {
@@ -455,21 +504,29 @@
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
       if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
-      if (Math.abs(dx) >= Math.abs(dy)) {
-        step(dx > 0 ? 'right' : 'left');
-      } else {
-        step(dy > 0 ? 'down' : 'up');
-      }
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const sector = Math.round(((angle + 360) % 360) / 45) % 8;
+      step(SWIPE_DIRS[sector]);
     }, { passive: false });
 
     function restartGame() {
       document.getElementById('mode-select').style.display = 'flex';
+      document.getElementById('keypad').style.display = 'none';
       state.phase = 'menu';
       state.score = 0;
       state.level = 1;
-      drawAttract();
       updateHud();
+      resizeCanvas();
     }
+
+    // ─── Keypad Buttons ──────────────────────────────────────────────────────────
+    document.querySelectorAll('.kp-btn').forEach(btn => {
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (state.phase === 'gameover') { restartGame(); return; }
+        if (state.phase === 'playing') step(btn.dataset.dir);
+      });
+    });
 
     // Initial canvas size + attract screen
     resizeCanvas();

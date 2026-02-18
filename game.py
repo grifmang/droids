@@ -35,13 +35,15 @@ def build_board(size, level, player_spot, enemy_spots):
     return [board, player_spot, enemy_spots, enemy_locations]
 
 def move_player(player_spot, key):
-    x_movements = {'up': -1, 'down': 1}
-    y_movements = { 'left': -1, 'right': 1}
-
-    if key in x_movements:
-        return [player_spot[0] + x_movements[key], player_spot[1]]
-    elif key in y_movements:
-        return [player_spot[0], player_spot[1] + y_movements[key]]
+    movements = {
+        'q': (-1, -1), 'w': (-1, 0), 'e': (-1, 1),
+        'a': (0, -1),  's': (0, 0),  'd': (0, 1),
+        'z': (1, -1),  'x': (1, 0),  'c': (1, 1),
+    }
+    if key in movements:
+        dr, dc = movements[key]
+        return [player_spot[0] + dr, player_spot[1] + dc]
+    return list(player_spot)
 
 def enemy_spot(board_size):
     # Function to choose a random row/col for enemy placement
@@ -83,7 +85,7 @@ def game(board_size):
     enemy_locations = board[3]
 
     playing = True
-    movements = {'up':'up', 'down':'down', 'left':'left', 'right':'right'}
+    valid_keys = {'q', 'w', 'e', 'a', 's', 'd', 'z', 'x', 'c'}
 
     while playing:
         os.system("cls")
@@ -94,8 +96,9 @@ def game(board_size):
             print('|' + ' '.join(line) + '|')
         print(' ' + ('-' * print_border))
 
-        if keyboard.read_key() in movements:
-            new_coords = move_player(board[1], keyboard.read_key())
+        key = keyboard.read_key()
+        if key in valid_keys:
+            new_coords = move_player(board[1], key)
             board = build_board(board_size, level, [new_coords[0], new_coords[1]], enemy_spots)
             # print(enemy_spots)
             for s in enemy_spots:
