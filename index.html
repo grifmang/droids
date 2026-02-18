@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Droids</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .ad-banner {
+      width: 100%;
+      max-width: 500px;
+      height: 60px;
+      background: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: #888;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 500px;
+      flex: 1;
+    }
+    #hud {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      font-size: 14px;
+      background: #222;
+    }
+    #canvas {
+      display: block;
+      touch-action: none;
+    }
+    #mode-select {
+      display: flex;
+      gap: 16px;
+      padding: 20px;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    #mode-select h2 {
+      font-size: 24px;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+    }
+    #mode-select p {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+    .mode-btn {
+      background: #333;
+      color: #fff;
+      border: 2px solid #555;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-family: monospace;
+      cursor: pointer;
+      width: 200px;
+      letter-spacing: 2px;
+    }
+    .mode-btn:hover, .mode-btn:active { background: #555; }
+  </style>
+</head>
+<body>
+  <div id="ad-banner-top" class="ad-banner" data-ad-slot="top">Advertisement</div>
+  <div id="game-container">
+    <div id="hud">
+      <span id="mode-label">DROIDS</span>
+      <span id="level-display"></span>
+      <span id="score-display"></span>
+      <span id="best-display"></span>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="mode-select">
+      <h2>DROIDS</h2>
+      <p>Survive. Trick enemies into each other.</p>
+      <button class="mode-btn" id="btn-levels">LEVELS</button>
+      <button class="mode-btn" id="btn-survival">SURVIVAL</button>
+    </div>
+  </div>
+  <div id="ad-banner-bottom" class="ad-banner" data-ad-slot="bottom">Advertisement</div>
+  <script>
+    // GAME LOGIC GOES HERE (Tasks 2-8)
+  </script>
+</body>
+</html>
