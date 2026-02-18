@@ -151,6 +151,7 @@
       <span id="level-display"></span>
       <span id="score-display"></span>
       <span id="best-display"></span>
+      <span id="hp-display"></span>
     </div>
     <div id="play-layout">
       <div id="mode-select">
@@ -190,6 +191,7 @@
       enemies: [],             // array of [row, col]
       killed: [],              // array of [row, col] (enemy-enemy collision wreckage)
       moveCount: 0,            // survival mode: track moves for enemy spawning
+      hp: 3,                   // player hit points
     };
 
     // ─── Init ────────────────────────────────────────────────────────────────────
@@ -200,6 +202,7 @@
       state.moveCount = 0;
       state.phase = 'playing';
       state.boardSize = 20;
+      state.hp = 3;
       resetLevel();
       document.getElementById('mode-select').style.display = 'none';
       document.getElementById('keypad').style.display = 'grid';
@@ -216,6 +219,11 @@
       for (let i = 0; i < count; i++) {
         const exclude = [state.playerPos, ...state.enemies];
         state.enemies.push(randomPos(state.boardSize, exclude));
+      }
+      // Spawn 2 bonus asterisks at the start of each level
+      for (let i = 0; i < 2; i++) {
+        const exclude = [state.playerPos, ...state.enemies, ...state.killed];
+        state.killed.push(randomPos(state.boardSize, exclude));
       }
     }
 
@@ -239,13 +247,17 @@
     }
 
     function updateHud() {
-      const modeText = state.mode === 'levels' ? '[LEVELS]' : '[SURVIVAL]';
+      const playing = state.phase === 'playing' || state.phase === 'gameover';
+      const modeText = playing ? (state.mode === 'levels' ? '[LEVELS]' : '[SURVIVAL]') : 'DROIDS';
       document.getElementById('mode-label').textContent = modeText;
       document.getElementById('level-display').textContent =
-        state.mode === 'levels' ? `LVL:${state.level}` : '';
-      document.getElementById('score-display').textContent = `SCORE:${state.score}`;
+        playing && state.mode === 'levels' ? `LVL:${state.level}` : '';
+      document.getElementById('score-display').textContent =
+        playing ? `SCORE:${state.score}` : '';
       document.getElementById('best-display').textContent =
-        state.mode === 'survival' ? `BEST:${state.bestScore}` : '';
+        playing && state.mode === 'survival' ? `BEST:${state.bestScore}` : '';
+      document.getElementById('hp-display').textContent =
+        playing ? `HP:${state.hp}` : '';
     }
 
     document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
@@ -458,6 +470,15 @@
       // 1. Move player
       state.playerPos = movePlayer(state.playerPos, dir, state.boardSize);
 
+      // 1b. Asterisk pickup: stepping on a * awards +1 HP
+      const asteriskIdx = state.killed.findIndex(
+        k => k[0] === state.playerPos[0] && k[1] === state.playerPos[1]
+      );
+      if (asteriskIdx !== -1) {
+        state.hp++;
+        state.killed.splice(asteriskIdx, 1);
+      }
+
       // 2. Move all enemies toward player
       state.enemies = state.enemies.map(e => moveEnemy(e, state.playerPos, state.boardSize));
 
@@ -466,10 +487,19 @@
       state.enemies = survivors;
       state.killed = [...state.killed, ...newKilled];
 
-      // 4. Check if player caught by an enemy
-      if (isPlayerCaught(state.playerPos, state.enemies)) {
-        gameOver();
-        return;
+      // 4. Enemy contact: each enemy on the player's cell deals 1 damage and is destroyed
+      const hitEnemies = state.enemies.filter(
+        e => e[0] === state.playerPos[0] && e[1] === state.playerPos[1]
+      );
+      if (hitEnemies.length > 0) {
+        state.hp -= hitEnemies.length;
+        state.enemies = state.enemies.filter(
+          e => !(e[0] === state.playerPos[0] && e[1] === state.playerPos[1])
+        );
+        if (state.hp <= 0) {
+          gameOver();
+          return;
+        }
       }
 
       // 5. Survival mode: increment score and spawn enemies
