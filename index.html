@@ -133,6 +133,7 @@
       resetLevel();
       document.getElementById('mode-select').style.display = 'none';
       updateHud();
+      redraw();
     }
 
     function resetLevel() {
@@ -227,6 +228,147 @@
     function isPlayerOnKilled(playerPos, killed) {
       return killed.some(k => k[0] === playerPos[0] && k[1] === playerPos[1]);
     }
+
+    // ─── Canvas ──────────────────────────────────────────────────────────────────
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const adHeight = 60 * 2 + 40; // top banner + bottom banner + hud approx
+      const available = Math.min(
+        window.innerWidth,
+        window.innerHeight - adHeight,
+        500
+      );
+      canvas.width = available;
+      canvas.height = available;
+      if (state.phase === 'playing' || state.phase === 'gameover') redraw();
+      else drawAttract();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // ─── Rendering ───────────────────────────────────────────────────────────────
+    function redraw() {
+      const size = canvas.width;
+      const cellSize = size / state.boardSize;
+      ctx.clearRect(0, 0, size, size);
+
+      // Draw grid background
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw grid lines
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= state.boardSize; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * cellSize, 0);
+        ctx.lineTo(i * cellSize, size);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellSize);
+        ctx.lineTo(size, i * cellSize);
+        ctx.stroke();
+      }
+
+      // Draw killed markers
+      for (const [r, c] of state.killed) {
+        drawKilled(r, c, cellSize);
+      }
+
+      // Draw enemies
+      for (const [r, c] of state.enemies) {
+        drawEnemy(r, c, cellSize);
+      }
+
+      // Draw player
+      const [pr, pc] = state.playerPos;
+      drawPlayer(pr, pc, cellSize);
+
+      // Draw game over overlay
+      if (state.phase === 'gameover') {
+        drawGameOver();
+      }
+    }
+
+    function drawPlayer(row, col, cellSize) {
+      const x = col * cellSize + cellSize / 2;
+      const y = row * cellSize + cellSize / 2;
+      const r = cellSize * 0.35;
+      ctx.fillStyle = '#2266ff';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawEnemy(row, col, cellSize) {
+      const x = col * cellSize;
+      const y = row * cellSize;
+      const pad = cellSize * 0.2;
+      ctx.strokeStyle = '#cc2222';
+      ctx.lineWidth = cellSize * 0.1;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x + pad, y + pad);
+      ctx.lineTo(x + cellSize - pad, y + cellSize - pad);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + cellSize - pad, y + pad);
+      ctx.lineTo(x + pad, y + cellSize - pad);
+      ctx.stroke();
+    }
+
+    function drawKilled(row, col, cellSize) {
+      ctx.fillStyle = '#888';
+      ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${cellSize * 0.6}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('*', col * cellSize + cellSize / 2, row * cellSize + cellSize / 2);
+    }
+
+    function drawGameOver() {
+      const size = canvas.width;
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold ${size * 0.1}px monospace`;
+      ctx.fillText('GAME OVER', size / 2, size * 0.38);
+      ctx.font = `${size * 0.055}px monospace`;
+      ctx.fillText(`Score: ${state.score}`, size / 2, size * 0.52);
+      if (state.mode === 'survival' && state.score >= state.bestScore) {
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillText('NEW BEST!', size / 2, size * 0.62);
+        ctx.fillStyle = '#fff';
+      }
+      ctx.font = `${size * 0.045}px monospace`;
+      ctx.fillStyle = '#aaa';
+      ctx.fillText('tap or press any key to restart', size / 2, size * 0.76);
+    }
+
+    function drawAttract() {
+      const size = canvas.width;
+      const boardSize = 10;
+      const cellSize = size / boardSize;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= boardSize; i++) {
+        ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(size, i * cellSize); ctx.stroke();
+      }
+      drawPlayer(5, 5, cellSize);
+      [[1,1],[2,3],[7,8],[8,2],[3,7]].forEach(([r,c]) => drawEnemy(r,c,cellSize));
+      [[4,4],[6,6]].forEach(([r,c]) => drawKilled(r,c,cellSize));
+    }
+
+    // Initial canvas size + attract screen
+    resizeCanvas();
   </script>
 </body>
 </html>
