@@ -1,0 +1,6 @@
+venv/
+.claude/
+docs/
+*.py
+CLAUDE.md
+README.md

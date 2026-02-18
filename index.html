@@ -8,11 +8,12 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html {
       height: 100%;
+      background: #000;
     }
     body {
-      background: #111;
-      color: #fff;
-      font-family: monospace;
+      background: #000;
+      color: #33ff33;
+      font-family: 'Courier New', Courier, monospace;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -24,12 +25,14 @@
       width: 100%;
       max-width: 500px;
       height: 60px;
-      background: #333;
+      background: #000;
+      border-top: 1px solid #1a3300;
+      border-bottom: 1px solid #1a3300;
       display: flex;
       align-items: center;
       justify-content: center;
       font-style: italic;
-      color: #888;
+      color: #1a6600;
       font-size: 12px;
       flex-shrink: 0;
     }
@@ -45,9 +48,12 @@
       width: 100%;
       display: flex;
       justify-content: space-between;
-      padding: 8px 12px;
-      font-size: 14px;
-      background: #222;
+      padding: 6px 12px;
+      font-size: 13px;
+      background: #000;
+      color: #33ff33;
+      border-bottom: 1px solid #1a3300;
+      font-family: 'Courier New', Courier, monospace;
     }
     #canvas {
       display: block;
@@ -55,39 +61,42 @@
     }
     #mode-select {
       display: flex;
-      gap: 16px;
-      padding: 20px;
+      gap: 12px;
+      padding: 16px 20px;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
       width: 100%;
     }
     #mode-select h2 {
-      font-size: 24px;
-      letter-spacing: 4px;
-      margin-bottom: 8px;
+      font-size: 20px;
+      letter-spacing: 2px;
+      color: #33ff33;
+      margin-bottom: 4px;
     }
     #mode-select p {
       font-size: 12px;
-      color: #888;
-      margin-bottom: 16px;
+      color: #1a6600;
+      margin-bottom: 12px;
     }
     .mode-btn {
-      background: #333;
-      color: #fff;
-      border: 2px solid #555;
-      padding: 14px 32px;
-      font-size: 16px;
-      font-family: monospace;
+      background: #000;
+      color: #33ff33;
+      border: 1px solid #336600;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-family: 'Courier New', Courier, monospace;
       cursor: pointer;
-      width: 200px;
-      letter-spacing: 2px;
+      width: 220px;
+      text-align: left;
+      letter-spacing: 1px;
     }
-    .mode-btn:hover, .mode-btn:active { background: #555; }
-    .mode-btn:focus-visible { outline: 2px solid #aaa; }
+    .mode-btn::before { content: '> '; color: #1a6600; }
+    .mode-btn:hover, .mode-btn:active { background: #0a1a00; border-color: #33ff33; }
+    .mode-btn:focus-visible { outline: 1px solid #33ff33; outline-offset: 2px; }
   </style>
 </head>
 <body>
-  <div id="ad-banner-top" class="ad-banner" data-ad-slot="top">Advertisement</div>
+  <div id="ad-banner-top" class="ad-banner" data-ad-slot="top">[ advertisement ]</div>
   <div id="game-container">
     <div id="hud">
       <span id="mode-label">DROIDS</span>
@@ -97,13 +106,13 @@
     </div>
     <canvas id="canvas"></canvas>
     <div id="mode-select">
-      <h2>DROIDS</h2>
-      <p>Survive. Trick enemies into each other.</p>
+      <h2>DROIDS v1.0</h2>
+      <p>// trick enemies into colliding. survive.</p>
       <button class="mode-btn" id="btn-levels">LEVELS</button>
       <button class="mode-btn" id="btn-survival">SURVIVAL</button>
     </div>
   </div>
-  <div id="ad-banner-bottom" class="ad-banner" data-ad-slot="bottom">Advertisement</div>
+  <div id="ad-banner-bottom" class="ad-banner" data-ad-slot="bottom">[ advertisement ]</div>
   <script>
     // ─── State ───────────────────────────────────────────────────────────────────
     const state = {
@@ -168,13 +177,13 @@
     }
 
     function updateHud() {
-      const modeText = state.mode === 'levels' ? 'LEVELS' : 'SURVIVAL';
+      const modeText = state.mode === 'levels' ? '[LEVELS]' : '[SURVIVAL]';
       document.getElementById('mode-label').textContent = modeText;
       document.getElementById('level-display').textContent =
-        state.mode === 'levels' ? `Level ${state.level}` : '';
-      document.getElementById('score-display').textContent = `Score: ${state.score}`;
+        state.mode === 'levels' ? `LVL:${state.level}` : '';
+      document.getElementById('score-display').textContent = `SCORE:${state.score}`;
       document.getElementById('best-display').textContent =
-        state.mode === 'survival' ? `Best: ${state.bestScore}` : '';
+        state.mode === 'survival' ? `BEST:${state.bestScore}` : '';
     }
 
     document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
@@ -245,127 +254,111 @@
 
     window.addEventListener('resize', resizeCanvas);
 
+    // ─── Terminal Colors ──────────────────────────────────────────────────────────
+    const T = {
+      bg:      '#000000',
+      border:  '#33ff33',
+      empty:   '#1a3300',
+      player:  '#33ff33',
+      enemy:   '#ff3333',
+      killed:  '#886600',
+      overlay: 'rgba(0,6,0,0.88)',
+      score:   '#33ff33',
+      best:    '#ffff33',
+      prompt:  '#1a6600',
+    };
+
     // ─── Rendering ───────────────────────────────────────────────────────────────
-    function redraw() {
-      const size = canvas.width;
-      const cellSize = size / state.boardSize;
-      ctx.clearRect(0, 0, size, size);
-
-      // Draw grid background
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, size, size);
-
-      // Draw grid lines
-      ctx.strokeStyle = '#ddd';
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i <= state.boardSize; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * cellSize, 0);
-        ctx.lineTo(i * cellSize, size);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(0, i * cellSize);
-        ctx.lineTo(size, i * cellSize);
-        ctx.stroke();
-      }
-
-      // Draw killed markers
-      for (const [r, c] of state.killed) {
-        drawKilled(r, c, cellSize);
-      }
-
-      // Draw enemies
-      for (const [r, c] of state.enemies) {
-        drawEnemy(r, c, cellSize);
-      }
-
-      // Draw player
-      const [pr, pc] = state.playerPos;
-      drawPlayer(pr, pc, cellSize);
-
-      // Draw game over overlay
-      if (state.phase === 'gameover') {
-        drawGameOver();
-      }
-    }
-
-    function drawPlayer(row, col, cellSize) {
-      const x = col * cellSize + cellSize / 2;
-      const y = row * cellSize + cellSize / 2;
-      const r = cellSize * 0.35;
-      ctx.fillStyle = '#2266ff';
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function drawEnemy(row, col, cellSize) {
+    function drawChar(x, y, char, color, cellSize) {
       ctx.save();
-      const x = col * cellSize;
-      const y = row * cellSize;
-      const pad = cellSize * 0.2;
-      ctx.strokeStyle = '#cc2222';
-      ctx.lineWidth = cellSize * 0.1;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(x + pad, y + pad);
-      ctx.lineTo(x + cellSize - pad, y + cellSize - pad);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x + cellSize - pad, y + pad);
-      ctx.lineTo(x + pad, y + cellSize - pad);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function drawKilled(row, col, cellSize) {
-      ctx.save();
-      ctx.fillStyle = '#888';
-      ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${cellSize * 0.6}px monospace`;
+      ctx.fillStyle = color;
+      ctx.font = `bold ${Math.floor(cellSize * 0.65)}px 'Courier New', monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('*', col * cellSize + cellSize / 2, row * cellSize + cellSize / 2);
+      ctx.fillText(char, x, y);
       ctx.restore();
+    }
+
+    function drawBoard(boardSize, playerPos, enemies, killed, pad, cellSize) {
+      for (let r = 0; r < boardSize; r++) {
+        for (let c = 0; c < boardSize; c++) {
+          const cx = pad + c * cellSize + cellSize / 2;
+          const cy = pad + r * cellSize + cellSize / 2;
+          let char, color;
+          if (r === playerPos[0] && c === playerPos[1]) {
+            char = 'O'; color = T.player;
+          } else if (enemies.some(e => e[0] === r && e[1] === c)) {
+            char = 'X'; color = T.enemy;
+          } else if (killed.some(k => k[0] === r && k[1] === c)) {
+            char = '*'; color = T.killed;
+          } else {
+            char = '.'; color = T.empty;
+          }
+          drawChar(cx, cy, char, color, cellSize);
+        }
+      }
+    }
+
+    function redraw() {
+      const size = canvas.width;
+      const pad = Math.max(3, Math.floor(size * 0.015));
+      const inner = size - pad * 2;
+      const cellSize = inner / state.boardSize;
+
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.strokeStyle = T.border;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
+
+      drawBoard(state.boardSize, state.playerPos, state.enemies, state.killed, pad, cellSize);
+
+      if (state.phase === 'gameover') drawGameOver();
     }
 
     function drawGameOver() {
       const size = canvas.width;
-      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillStyle = T.overlay;
       ctx.fillRect(0, 0, size, size);
-      ctx.fillStyle = '#fff';
+      ctx.save();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `bold ${size * 0.1}px monospace`;
-      ctx.fillText('GAME OVER', size / 2, size * 0.38);
-      ctx.font = `${size * 0.055}px monospace`;
-      ctx.fillText(`Score: ${state.score}`, size / 2, size * 0.52);
+      ctx.fillStyle = T.enemy;
+      ctx.font = `bold ${Math.floor(size * 0.09)}px 'Courier New', monospace`;
+      ctx.fillText('GAME OVER', size / 2, size * 0.35);
+      ctx.fillStyle = T.score;
+      ctx.font = `${Math.floor(size * 0.055)}px 'Courier New', monospace`;
+      ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.50);
       if (state.mode === 'survival' && state.score > state.bestScore) {
-        ctx.fillStyle = '#ffcc00';
-        ctx.fillText('NEW BEST!', size / 2, size * 0.62);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = T.best;
+        ctx.font = `${Math.floor(size * 0.05)}px 'Courier New', monospace`;
+        ctx.fillText('>>> NEW BEST! <<<', size / 2, size * 0.63);
       }
-      ctx.font = `${size * 0.045}px monospace`;
-      ctx.fillStyle = '#aaa';
-      ctx.fillText('tap or press any key to restart', size / 2, size * 0.76);
+      ctx.fillStyle = T.prompt;
+      ctx.font = `${Math.floor(size * 0.04)}px 'Courier New', monospace`;
+      ctx.fillText('[ tap or press any key ]', size / 2, size * 0.78);
+      ctx.restore();
     }
 
     function drawAttract() {
       const size = canvas.width;
       const boardSize = 10;
-      const cellSize = size / boardSize;
-      ctx.fillStyle = '#fff';
+      const pad = Math.max(3, Math.floor(size * 0.015));
+      const inner = size - pad * 2;
+      const cellSize = inner / boardSize;
+
+      ctx.fillStyle = T.bg;
       ctx.fillRect(0, 0, size, size);
-      ctx.strokeStyle = '#ddd';
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i <= boardSize; i++) {
-        ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, size); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(size, i * cellSize); ctx.stroke();
-      }
-      drawPlayer(5, 5, cellSize);
-      [[1,1],[2,3],[7,8],[8,2],[3,7]].forEach(([r,c]) => drawEnemy(r,c,cellSize));
-      [[4,4],[6,6]].forEach(([r,c]) => drawKilled(r,c,cellSize));
+
+      ctx.strokeStyle = T.border;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
+
+      drawBoard(boardSize, [5, 5],
+        [[1,1],[2,3],[7,8],[8,2],[3,7]],
+        [[4,4],[6,6]],
+        pad, cellSize);
     }
 
     // ─── Game Step ───────────────────────────────────────────────────────────────
