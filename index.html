@@ -177,6 +177,56 @@
 
     document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
     document.getElementById('btn-survival').addEventListener('click', () => initGame('survival'));
+
+    // ─── Pure Game Logic ─────────────────────────────────────────────────────────
+
+    function movePlayer(pos, dir, boardSize) {
+      const [row, col] = pos;
+      const moves = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
+      if (!moves[dir]) return pos;
+      const [dr, dc] = moves[dir];
+      const newRow = Math.max(0, Math.min(boardSize - 1, row + dr));
+      const newCol = Math.max(0, Math.min(boardSize - 1, col + dc));
+      return [newRow, newCol];
+    }
+
+    function moveEnemy(enemy, player, boardSize) {
+      const [er, ec] = enemy;
+      const [pr, pc] = player;
+      let nr = er;
+      let nc = ec;
+      // Move one step toward player on each axis independently
+      if (pr < er && er > 0)             nr = er - 1;
+      if (pr > er && er < boardSize - 1) nr = er + 1;
+      if (pc < ec && ec > 0)             nc = ec - 1;
+      if (pc > ec && ec < boardSize - 1) nc = ec + 1;
+      return [nr, nc];
+    }
+
+    function detectCollisions(enemies) {
+      // Returns { survivors: [[r,c],...], newKilled: [[r,c],...] }
+      const seen = new Map();
+      const collided = new Set();
+      for (const e of enemies) {
+        const key = `${e[0]},${e[1]}`;
+        if (seen.has(key)) {
+          collided.add(key);
+        } else {
+          seen.set(key, e);
+        }
+      }
+      const survivors = enemies.filter(e => !collided.has(`${e[0]},${e[1]}`));
+      const newKilled = [...collided].map(k => k.split(',').map(Number));
+      return { survivors, newKilled };
+    }
+
+    function isPlayerCaught(playerPos, enemies) {
+      return enemies.some(e => e[0] === playerPos[0] && e[1] === playerPos[1]);
+    }
+
+    function isPlayerOnKilled(playerPos, killed) {
+      return killed.some(k => k[0] === playerPos[0] && k[1] === playerPos[1]);
+    }
   </script>
 </body>
 </html>
