@@ -6,6 +6,9 @@
   <title>Droids</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      height: 100%;
+    }
     body {
       background: #111;
       color: #fff;
@@ -13,8 +16,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
+      height: 100%;
       overflow: hidden;
+      overscroll-behavior: none;
     }
     .ad-banner {
       width: 100%;
@@ -79,6 +83,7 @@
       letter-spacing: 2px;
     }
     .mode-btn:hover, .mode-btn:active { background: #555; }
+    .mode-btn:focus-visible { outline: 2px solid #aaa; }
   </style>
 </head>
 <body>
