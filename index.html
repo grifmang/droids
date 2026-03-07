@@ -68,41 +68,6 @@
       display: block;
       touch-action: none;
     }
-    #mode-select {
-      display: flex;
-      gap: 12px;
-      padding: 16px 0;
-      flex-direction: column;
-      align-items: flex-start;
-      width: 220px;
-      flex-shrink: 0;
-    }
-    #mode-select h2 {
-      font-size: 20px;
-      letter-spacing: 2px;
-      color: #33ff33;
-      margin-bottom: 4px;
-    }
-    #mode-select p {
-      font-size: 12px;
-      color: #1a6600;
-      margin-bottom: 12px;
-    }
-    .mode-btn {
-      background: #000;
-      color: #33ff33;
-      border: 1px solid #336600;
-      padding: 10px 20px;
-      font-size: 15px;
-      font-family: 'Courier New', Courier, monospace;
-      cursor: pointer;
-      width: 220px;
-      text-align: left;
-      letter-spacing: 1px;
-    }
-    .mode-btn::before { content: '> '; color: #1a6600; }
-    .mode-btn:hover, .mode-btn:active { background: #0a1a00; border-color: #33ff33; }
-    .mode-btn:focus-visible { outline: 1px solid #33ff33; outline-offset: 2px; }
     #keypad {
       display: none;
       grid-template-columns: repeat(3, 44px);
@@ -134,9 +99,6 @@
         flex-direction: column;
         align-items: center;
       }
-      #mode-select {
-        width: min(100%, 320px);
-      }
       #keypad {
         margin-top: 8px;
       }
@@ -155,12 +117,6 @@
       <span id="tp-display"></span>
     </div>
     <div id="play-layout">
-      <div id="mode-select">
-        <h2>DROIDS v1.0</h2>
-        <p>// trick enemies into colliding. survive.</p>
-        <button class="mode-btn" id="btn-levels">LEVELS</button>
-        <button class="mode-btn" id="btn-survival">SURVIVAL</button>
-      </div>
       <canvas id="canvas"></canvas>
       <div id="keypad">
         <button class="kp-btn" data-dir="up-left">↖</button>
@@ -180,14 +136,12 @@
   <script>
     // ─── State ───────────────────────────────────────────────────────────────────
     const state = {
-      mode: 'levels',          // 'levels' | 'survival'
-      level: 1,
       score: 0,
       bestScore: (function() {
         try { return parseInt(localStorage.getItem('droids_best_score') || '0'); }
         catch { return 0; }
       })(),
-      phase: 'menu',           // 'menu' | 'playing' | 'gameover'
+      phase: 'playing',        // 'playing' | 'gameover'
       boardSize: 20,
       playerPos: [10, 10],
       enemies: [],             // array of { pos: [row, col], type: string }
@@ -204,9 +158,7 @@
     };
 
     // ─── Init ────────────────────────────────────────────────────────────────────
-    function initGame(mode) {
-      state.mode = mode;
-      state.level = 1;
+    function initGame() {
       state.score = 0;
       state.phase = 'playing';
       state.boardSize = 20;
@@ -219,40 +171,18 @@
       state.teleportCharges = 2;
       state.shield = false;
       state.powerups = [];
-      if (mode === 'survival') {
-        const mid = Math.floor(state.boardSize / 2);
-        state.playerPos = [mid, mid];
-        state.killed = [];
-        spawnWave();
-        // Spawn 2 bonus asterisks
-        for (let i = 0; i < 2; i++) {
-          const exclude = [state.playerPos, ...state.enemies.map(e => e.pos), ...state.killed];
-          state.killed.push(randomPos(state.boardSize, exclude));
-        }
-      } else {
-        resetLevel();
-      }
-      document.getElementById('mode-select').style.display = 'none';
-      document.getElementById('keypad').style.display = 'grid';
-      updateHud();
-      resizeCanvas();
-    }
-
-    function resetLevel() {
       const mid = Math.floor(state.boardSize / 2);
       state.playerPos = [mid, mid];
       state.killed = [];
-      state.enemies = [];
-      const count = state.level * 4;
-      for (let i = 0; i < count; i++) {
-        const exclude = [state.playerPos, ...state.enemies.map(e => e.pos)];
-        state.enemies.push({ pos: randomPos(state.boardSize, exclude), type: 'normal' });
-      }
-      // Spawn 2 bonus asterisks at the start of each level
+      spawnWave();
+      // Spawn 2 bonus asterisks
       for (let i = 0; i < 2; i++) {
         const exclude = [state.playerPos, ...state.enemies.map(e => e.pos), ...state.killed];
         state.killed.push(randomPos(state.boardSize, exclude));
       }
+      document.getElementById('keypad').style.display = 'grid';
+      updateHud();
+      resizeCanvas();
     }
 
     function randomPos(boardSize, exclude) {
@@ -298,30 +228,24 @@
 
     function updateHud() {
       const playing = state.phase === 'playing' || state.phase === 'gameover';
-      const modeText = playing ? (state.mode === 'levels' ? '[LEVELS]' : '[SURVIVAL]') : 'DROIDS';
-      document.getElementById('mode-label').textContent = modeText;
+      document.getElementById('mode-label').textContent = playing ? 'DROIDS' : 'DROIDS';
       document.getElementById('level-display').textContent =
-        playing && state.mode === 'levels' ? `LVL:${state.level}` :
-        playing && state.mode === 'survival' ? `WAVE:${state.wave}` : '';
+        playing ? `WAVE:${state.wave}` : '';
       document.getElementById('score-display').textContent =
         playing ? `SCORE:${state.score}` : '';
       document.getElementById('best-display').textContent =
-        playing && state.mode === 'survival' ? `BEST:${state.bestScore}` : '';
-      // HP display with visual hearts
+        playing ? `BEST:${state.bestScore}` : '';
       if (playing) {
         const filled = Math.max(0, state.hp);
         const empty = 5 - filled;
         document.getElementById('hp-display').textContent =
           '\u2665'.repeat(filled) + '\u2661'.repeat(empty);
+        document.getElementById('tp-display').textContent = `TP:${state.teleportCharges}`;
       } else {
         document.getElementById('hp-display').textContent = '';
+        document.getElementById('tp-display').textContent = '';
       }
-      document.getElementById('tp-display').textContent =
-        playing && state.mode === 'survival' ? `TP:${state.teleportCharges}` : '';
     }
-
-    document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
-    document.getElementById('btn-survival').addEventListener('click', () => initGame('survival'));
 
     // ─── Pure Game Logic ─────────────────────────────────────────────────────────
 
@@ -409,7 +333,6 @@
 
     function teleport() {
       if (state.phase !== 'playing') return;
-      if (state.mode !== 'survival') return;
       if (state.teleportCharges <= 0) return;
       // Find a random empty cell (no enemy, no wreckage, no powerup, not current pos)
       const exclude = [
@@ -465,7 +388,6 @@
 
     function resizeCanvas() {
       const playLayout = document.getElementById('play-layout');
-      const modeSelect = document.getElementById('mode-select');
       const keypad = document.getElementById('keypad');
       const adHeight = 60 * 2 + 40; // top banner + bottom banner + hud approx
       const availableHeight = window.innerHeight - adHeight;
@@ -475,15 +397,13 @@
       if (isDesktopLayout && playLayout) {
         const layoutStyles = window.getComputedStyle(playLayout);
         const gap = parseFloat(layoutStyles.columnGap || layoutStyles.gap || '16') || 16;
-        const modeVisible = modeSelect && window.getComputedStyle(modeSelect).display !== 'none';
         const keypadVisible = keypad && window.getComputedStyle(keypad).display !== 'none';
 
-        const menuWidth = modeVisible ? modeSelect.offsetWidth : 0;
         const keypadWidth = keypadVisible ? KEYPAD_WIDTH : 0;
-        const visibleColumns = 1 + (modeVisible ? 1 : 0) + (keypadVisible ? 1 : 0);
+        const visibleColumns = 1 + (keypadVisible ? 1 : 0);
         const totalGap = gap * Math.max(0, visibleColumns - 1);
 
-        availableWidth = playLayout.clientWidth - menuWidth - keypadWidth - totalGap;
+        availableWidth = playLayout.clientWidth - keypadWidth - totalGap;
       }
 
       const available = Math.min(
@@ -493,8 +413,7 @@
       );
       canvas.width = Math.max(80, available);
       canvas.height = Math.max(80, available);
-      if (state.phase === 'playing' || state.phase === 'gameover') redraw();
-      else drawAttract();
+      redraw();
     }
 
     window.addEventListener('resize', resizeCanvas);
@@ -591,13 +510,9 @@
       ctx.fillText('GAME OVER', size / 2, size * 0.30);
       ctx.fillStyle = T.score;
       ctx.font = `${Math.floor(size * 0.055)}px 'Courier New', monospace`;
-      if (state.mode === 'survival') {
-        ctx.fillText(`WAVE: ${state.wave}`, size / 2, size * 0.45);
-        ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.55);
-      } else {
-        ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.50);
-      }
-      if (state.mode === 'survival' && state.score > state.bestScore) {
+      ctx.fillText(`WAVE: ${state.wave}`, size / 2, size * 0.45);
+      ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.55);
+      if (state.score > state.bestScore) {
         ctx.fillStyle = T.best;
         ctx.font = `${Math.floor(size * 0.05)}px 'Courier New', monospace`;
         ctx.fillText('>>> NEW BEST! <<<', size / 2, size * 0.68);
@@ -625,33 +540,6 @@
         ctx.fillText(state.waveOverlay.subtext, size / 2, size * 0.55);
       }
       ctx.restore();
-    }
-
-    function drawAttract() {
-      const size = canvas.width;
-      const boardSize = 20;
-      const pad = Math.max(3, Math.floor(size * 0.015));
-      const inner = size - pad * 2;
-      const cellSize = inner / boardSize;
-
-      ctx.fillStyle = T.bg;
-      ctx.fillRect(0, 0, size, size);
-
-      ctx.strokeStyle = T.border;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
-
-      drawBoard(boardSize, [10, 10],
-        [
-          {pos:[2,2],type:'normal'},
-          {pos:[4,6],type:'fast'},
-          {pos:[15,16],type:'normal'},
-          {pos:[16,4],type:'random'},
-          {pos:[6,14],type:'normal'},
-        ],
-        [[8,8],[12,12]],
-        [{pos:[5,10],type:'+'}, {pos:[14,3],type:'S'}, {pos:[11,17],type:'B'}],
-        pad, cellSize, false);
     }
 
     // ─── Game Step ───────────────────────────────────────────────────────────────
@@ -776,68 +664,59 @@
         }
       }
 
-      // 5. Survival mode: wave tracking and clear detection
-      if (state.mode === 'survival') {
-        state.waveMovesUsed++;
+      // 5. Wave tracking and clear detection
+      state.waveMovesUsed++;
 
-        // Random power-up spawn (3% chance per move)
-        if (Math.random() < 0.03) {
-          spawnPowerup();
-        }
-
-        // Wave clear: all enemies destroyed
-        if (state.enemies.length === 0) {
-          // Calculate wave score
-          let waveScore = 100;
-          let bonusText = '+100 base';
-          if (state.waveMovesUsed < 15) {
-            waveScore += 50;
-            bonusText += ', +50 speed';
-          }
-          if (!state.waveDamageTaken) {
-            waveScore += 25;
-            bonusText += ', +25 no-damage';
-          }
-          state.score += waveScore;
-
-          // Show wave clear overlay
-          state.waveOverlay = {
-            text: `WAVE ${state.wave} CLEAR!`,
-            subtext: bonusText,
-          };
-
-          // Start break phase
-          state.wave++;
-
-          // Bonus teleport charge every 3 waves
-          if ((state.wave - 1) % 3 === 0) {
-            state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
-          }
-
-          state.waveMovesUsed = 0;
-          state.waveDamageTaken = false;
-          state.breakMovesLeft = 3;
-
-          // Spawn bonus asterisks for the break
-          for (let i = 0; i < 2; i++) {
-            const exclude = [state.playerPos, ...state.killed];
-            state.killed.push(randomPos(state.boardSize, exclude));
-          }
-
-          // Spawn 1 power-up during break
-          spawnPowerup();
-
-          updateHud();
-          redraw();
-          return;
-        }
+      // Random power-up spawn (3% chance per move)
+      if (Math.random() < 0.03) {
+        spawnPowerup();
       }
 
-      // 6. Levels mode: check if all enemies cleared
-      if (state.mode === 'levels' && state.enemies.length === 0) {
-        state.level++;
-        state.score = state.level - 1;
-        resetLevel();
+      // Wave clear: all enemies destroyed
+      if (state.enemies.length === 0) {
+        // Calculate wave score
+        let waveScore = 100;
+        let bonusText = '+100 base';
+        if (state.waveMovesUsed < 15) {
+          waveScore += 50;
+          bonusText += ', +50 speed';
+        }
+        if (!state.waveDamageTaken) {
+          waveScore += 25;
+          bonusText += ', +25 no-damage';
+        }
+        state.score += waveScore;
+
+        // Show wave clear overlay
+        state.waveOverlay = {
+          text: `WAVE ${state.wave} CLEAR!`,
+          subtext: bonusText,
+        };
+
+        // Start break phase
+        state.wave++;
+
+        // Bonus teleport charge every 3 waves
+        if ((state.wave - 1) % 3 === 0) {
+          state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
+        }
+
+        state.waveMovesUsed = 0;
+        state.waveDamageTaken = false;
+        state.breakMovesLeft = 3;
+
+        // Spawn bonus asterisks for the break
+        for (let i = 0; i < 2; i++) {
+          const exclude = [state.playerPos, ...state.killed];
+          state.killed.push(randomPos(state.boardSize, exclude));
+        }
+
+        // Spawn 1 power-up during break
+        spawnPowerup();
+
+        updateHud();
+        redraw();
+        return;
       }
 
       updateHud();
@@ -846,7 +725,7 @@
 
     function gameOver() {
       state.phase = 'gameover';
-      if (state.mode === 'survival' && state.score > state.bestScore) {
+      if (state.score > state.bestScore) {
         state.bestScore = state.score;
         try {
           localStorage.setItem('droids_best_score', String(state.bestScore));
@@ -915,19 +794,7 @@
     }, { passive: false });
 
     function restartGame() {
-      document.getElementById('mode-select').style.display = 'flex';
-      document.getElementById('keypad').style.display = 'none';
-      state.phase = 'menu';
-      state.score = 0;
-      state.level = 1;
-      state.wave = 1;
-      state.waveOverlay = null;
-      state.breakMovesLeft = 0;
-      state.teleportCharges = 2;
-      state.shield = false;
-      state.powerups = [];
-      updateHud();
-      resizeCanvas();
+      initGame();
     }
 
     // ─── Keypad Buttons ──────────────────────────────────────────────────────────
@@ -945,8 +812,8 @@
       teleport();
     });
 
-    // Initial canvas size + attract screen
-    resizeCanvas();
+    // Auto-start the game
+    initGame();
   </script>
 </body>
 </html>
