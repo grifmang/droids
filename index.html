@@ -634,6 +634,20 @@
           state.hp = Math.min(state.hp + 1, 5);
           state.killed.splice(asteriskIdx, 1);
         }
+        // Power-up pickup during break
+        const brkPuIdx = state.powerups.findIndex(
+          p => p.pos[0] === state.playerPos[0] && p.pos[1] === state.playerPos[1]
+        );
+        if (brkPuIdx !== -1) {
+          const pu = state.powerups[brkPuIdx];
+          state.powerups.splice(brkPuIdx, 1);
+          if (pu.type === '+') {
+            state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
+          } else if (pu.type === 'S') {
+            state.shield = true;
+          }
+          // Bomb during break has no effect (no enemies)
+        }
         state.breakMovesLeft--;
         if (state.breakMovesLeft === 0) {
           // Break over: spawn next wave
@@ -660,6 +674,34 @@
         state.killed.splice(asteriskIdx, 1);
       }
 
+      // 1c. Power-up pickup
+      const puIdx = state.powerups.findIndex(
+        p => p.pos[0] === state.playerPos[0] && p.pos[1] === state.playerPos[1]
+      );
+      if (puIdx !== -1) {
+        const pu = state.powerups[puIdx];
+        state.powerups.splice(puIdx, 1);
+        if (pu.type === '+') {
+          state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
+        } else if (pu.type === 'S') {
+          state.shield = true;
+        } else if (pu.type === 'B') {
+          // Bomb: destroy all enemies in 8 adjacent cells
+          const [pr, pc] = state.playerPos;
+          const bombKilled = [];
+          state.enemies = state.enemies.filter(e => {
+            const dr = Math.abs(e.pos[0] - pr);
+            const dc = Math.abs(e.pos[1] - pc);
+            if (dr <= 1 && dc <= 1 && !(dr === 0 && dc === 0)) {
+              bombKilled.push(e.pos);
+              return false;
+            }
+            return true;
+          });
+          state.killed = [...state.killed, ...bombKilled];
+        }
+      }
+
       // 2. Move all enemies toward player
       state.enemies = state.enemies.map(e => ({
         ...e,
@@ -671,13 +713,18 @@
       state.enemies = survivors;
       state.killed = [...state.killed, ...newKilled];
 
-      // 4. Enemy contact: each enemy on the player's cell deals 1 damage and is destroyed
+      // 4. Enemy contact: each enemy on the player's cell deals damage
       const hitEnemies = state.enemies.filter(
         e => e.pos[0] === state.playerPos[0] && e.pos[1] === state.playerPos[1]
       );
       if (hitEnemies.length > 0) {
-        state.hp -= hitEnemies.length;
-        state.waveDamageTaken = true;
+        let damage = hitEnemies.length;
+        if (state.shield) {
+          damage = Math.max(0, damage - 1);
+          state.shield = false;
+        }
+        state.hp -= damage;
+        if (damage > 0) state.waveDamageTaken = true;
         state.enemies = state.enemies.filter(
           e => !(e.pos[0] === state.playerPos[0] && e.pos[1] === state.playerPos[1])
         );
