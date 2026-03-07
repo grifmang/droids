@@ -399,6 +399,20 @@
       redraw();
     }
 
+    function spawnPowerup() {
+      if (state.powerups.length >= 3) return; // max 3 on board
+      const types = ['+', 'S', 'B'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const exclude = [
+        state.playerPos,
+        ...state.enemies.map(e => e.pos),
+        ...state.killed,
+        ...state.powerups.map(p => p.pos),
+      ];
+      const pos = randomPos(state.boardSize, exclude);
+      state.powerups.push({ pos, type });
+    }
+
     function detectCollisions(enemies) {
       // Returns { survivors: [{pos,type},...], newKilled: [[r,c],...] }
       const seen = new Map();
@@ -738,6 +752,11 @@
       if (state.mode === 'survival') {
         state.waveMovesUsed++;
 
+        // Random power-up spawn (3% chance per move)
+        if (Math.random() < 0.03) {
+          spawnPowerup();
+        }
+
         // Wave clear: all enemies destroyed
         if (state.enemies.length === 0) {
           // Calculate wave score
@@ -761,6 +780,12 @@
 
           // Start break phase
           state.wave++;
+
+          // Bonus teleport charge every 3 waves
+          if ((state.wave - 1) % 3 === 0) {
+            state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
+          }
+
           state.waveMovesUsed = 0;
           state.waveDamageTaken = false;
           state.breakMovesLeft = 3;
@@ -770,6 +795,9 @@
             const exclude = [state.playerPos, ...state.killed];
             state.killed.push(randomPos(state.boardSize, exclude));
           }
+
+          // Spawn 1 power-up during break
+          spawnPowerup();
 
           updateHud();
           redraw();
