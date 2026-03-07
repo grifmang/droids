@@ -106,7 +106,7 @@
     #keypad {
       display: none;
       grid-template-columns: repeat(3, 44px);
-      grid-template-rows: repeat(3, 44px);
+      grid-template-rows: repeat(3, 44px) 44px;
       gap: 4px;
       padding: 8px;
       margin-top: 0;
@@ -171,6 +171,7 @@
         <button class="kp-btn" data-dir="down-left">↙</button>
         <button class="kp-btn" data-dir="down">↓</button>
         <button class="kp-btn" data-dir="down-right">↘</button>
+        <button class="kp-btn" id="btn-teleport" style="grid-column: 1 / -1; font-size: 14px;">TELEPORT</button>
       </div>
     </div>
   </div>
@@ -196,6 +197,9 @@
       waveDamageTaken: false,  // whether player took damage this wave (for no-damage bonus)
       breakMovesLeft: 0,       // free moves remaining in between-wave break
       waveOverlay: null,       // overlay display state
+      teleportCharges: 2,      // teleport charges available
+      shield: false,           // whether player has a shield active
+      powerups: [],            // array of { pos: [row, col], type: '+' | 'S' | 'B' }
     };
 
     // ─── Init ────────────────────────────────────────────────────────────────────
@@ -205,12 +209,15 @@
       state.score = 0;
       state.phase = 'playing';
       state.boardSize = 20;
-      state.hp = 3;
+      state.hp = 5;
       state.wave = 1;
       state.waveMovesUsed = 0;
       state.waveDamageTaken = false;
       state.breakMovesLeft = 0;
       state.waveOverlay = null;
+      state.teleportCharges = 2;
+      state.shield = false;
+      state.powerups = [];
       if (mode === 'survival') {
         const mid = Math.floor(state.boardSize / 2);
         state.playerPos = [mid, mid];
@@ -781,6 +788,9 @@
       state.wave = 1;
       state.waveOverlay = null;
       state.breakMovesLeft = 0;
+      state.teleportCharges = 2;
+      state.shield = false;
+      state.powerups = [];
       updateHud();
       resizeCanvas();
     }
