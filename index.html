@@ -273,13 +273,21 @@
       const modeText = playing ? (state.mode === 'levels' ? '[LEVELS]' : '[SURVIVAL]') : 'DROIDS';
       document.getElementById('mode-label').textContent = modeText;
       document.getElementById('level-display').textContent =
-        playing && state.mode === 'levels' ? `LVL:${state.level}` : '';
+        playing && state.mode === 'levels' ? `LVL:${state.level}` :
+        playing && state.mode === 'survival' ? `WAVE:${state.wave}` : '';
       document.getElementById('score-display').textContent =
         playing ? `SCORE:${state.score}` : '';
       document.getElementById('best-display').textContent =
         playing && state.mode === 'survival' ? `BEST:${state.bestScore}` : '';
-      document.getElementById('hp-display').textContent =
-        playing ? `HP:${state.hp}` : '';
+      // HP display with visual hearts
+      if (playing) {
+        const filled = Math.max(0, state.hp);
+        const empty = 5 - filled;
+        document.getElementById('hp-display').textContent =
+          '\u2665'.repeat(filled) + '\u2661'.repeat(empty);
+      } else {
+        document.getElementById('hp-display').textContent = '';
+      }
     }
 
     document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
@@ -515,18 +523,23 @@
       ctx.textBaseline = 'middle';
       ctx.fillStyle = T.enemy;
       ctx.font = `bold ${Math.floor(size * 0.09)}px 'Courier New', monospace`;
-      ctx.fillText('GAME OVER', size / 2, size * 0.35);
+      ctx.fillText('GAME OVER', size / 2, size * 0.30);
       ctx.fillStyle = T.score;
       ctx.font = `${Math.floor(size * 0.055)}px 'Courier New', monospace`;
-      ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.50);
+      if (state.mode === 'survival') {
+        ctx.fillText(`WAVE: ${state.wave}`, size / 2, size * 0.45);
+        ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.55);
+      } else {
+        ctx.fillText(`SCORE: ${state.score}`, size / 2, size * 0.50);
+      }
       if (state.mode === 'survival' && state.score > state.bestScore) {
         ctx.fillStyle = T.best;
         ctx.font = `${Math.floor(size * 0.05)}px 'Courier New', monospace`;
-        ctx.fillText('>>> NEW BEST! <<<', size / 2, size * 0.63);
+        ctx.fillText('>>> NEW BEST! <<<', size / 2, size * 0.68);
       }
       ctx.fillStyle = T.prompt;
       ctx.font = `${Math.floor(size * 0.04)}px 'Courier New', monospace`;
-      ctx.fillText('[ tap or press any key ]', size / 2, size * 0.78);
+      ctx.fillText('[ tap or press any key ]', size / 2, size * 0.82);
       ctx.restore();
     }
 
