@@ -273,6 +273,28 @@
       return pos;
     }
 
+    function randomEdgePos(boardSize, exclude) {
+      // Spawn within 3 rows/columns of any board edge
+      const excludeList = Array.isArray(exclude) && Array.isArray(exclude[0])
+        ? exclude
+        : (exclude ? [exclude] : []);
+      let pos;
+      let attempts = 0;
+      const maxAttempts = boardSize * boardSize * 4;
+      const edgeDepth = 3;
+      do {
+        pos = [
+          Math.floor(Math.random() * boardSize),
+          Math.floor(Math.random() * boardSize),
+        ];
+        const inEdge = pos[0] < edgeDepth || pos[0] >= boardSize - edgeDepth ||
+                       pos[1] < edgeDepth || pos[1] >= boardSize - edgeDepth;
+        attempts++;
+        if (attempts > maxAttempts) break;
+      } while (!inEdge || excludeList.some(e => e[0] === pos[0] && e[1] === pos[1]));
+      return pos;
+    }
+
     function updateHud() {
       const playing = state.phase === 'playing' || state.phase === 'gameover';
       const modeText = playing ? (state.mode === 'levels' ? '[LEVELS]' : '[SURVIVAL]') : 'DROIDS';
@@ -378,7 +400,7 @@
       ];
       for (const type of types) {
         const exclude = [state.playerPos, ...state.enemies.map(e => e.pos), ...state.killed];
-        state.enemies.push({ pos: randomPos(state.boardSize, exclude), type });
+        state.enemies.push({ pos: randomEdgePos(state.boardSize, exclude), type });
       }
     }
 
