@@ -302,6 +302,28 @@
       return [nr, nc];
     }
 
+    function moveEnemyByType(enemy, player, boardSize) {
+      if (enemy.type === 'fast') {
+        // Fast enemies: take two steps toward player
+        let pos = moveEnemy(enemy.pos, player, boardSize);
+        pos = moveEnemy(pos, player, boardSize);
+        return pos;
+      }
+      if (enemy.type === 'random') {
+        // Random enemies: 50% chase, 50% random direction
+        if (Math.random() < 0.5) {
+          return moveEnemy(enemy.pos, player, boardSize);
+        }
+        const dr = Math.floor(Math.random() * 3) - 1;
+        const dc = Math.floor(Math.random() * 3) - 1;
+        const nr = Math.max(0, Math.min(boardSize - 1, enemy.pos[0] + dr));
+        const nc = Math.max(0, Math.min(boardSize - 1, enemy.pos[1] + dc));
+        return [nr, nc];
+      }
+      // Normal enemies: one step toward player
+      return moveEnemy(enemy.pos, player, boardSize);
+    }
+
     function detectCollisions(enemies) {
       // Returns { survivors: [{pos,type},...], newKilled: [[r,c],...] }
       const seen = new Map();
@@ -373,6 +395,8 @@
       empty:   '#1a3300',
       player:  '#33ff33',
       enemy:   '#ff3333',
+      enemyFast:   '#ff8800',
+      enemyRandom: '#cc33ff',
       killed:  '#886600',
       overlay: 'rgba(0,6,0,0.88)',
       score:   '#33ff33',
@@ -400,7 +424,14 @@
           if (r === playerPos[0] && c === playerPos[1]) {
             char = 'O'; color = T.player;
           } else if (enemies.some(e => e.pos[0] === r && e.pos[1] === c)) {
-            char = 'X'; color = T.enemy;
+            const enemy = enemies.find(e => e.pos[0] === r && e.pos[1] === c);
+            if (enemy.type === 'fast') {
+              char = 'F'; color = T.enemyFast;
+            } else if (enemy.type === 'random') {
+              char = 'R'; color = T.enemyRandom;
+            } else {
+              char = 'X'; color = T.enemy;
+            }
           } else if (killed.some(k => k[0] === r && k[1] === c)) {
             char = '*'; color = T.killed;
           } else {
@@ -491,8 +522,8 @@
 
       // 2. Move all enemies toward player
       state.enemies = state.enemies.map(e => ({
-        pos: moveEnemy(e.pos, state.playerPos, state.boardSize),
-        type: e.type,
+        ...e,
+        pos: moveEnemyByType(e, state.playerPos, state.boardSize),
       }));
 
       // 3. Detect enemy-enemy collisions
