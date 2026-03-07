@@ -188,10 +188,15 @@
       phase: 'menu',           // 'menu' | 'playing' | 'gameover'
       boardSize: 20,
       playerPos: [10, 10],
-      enemies: [],             // array of [row, col]
+      enemies: [],             // array of { pos: [row, col], type: string }
       killed: [],              // array of [row, col] (enemy-enemy collision wreckage)
       moveCount: 0,            // survival mode: track moves for enemy spawning
       hp: 3,                   // player hit points
+      wave: 1,                 // current wave number
+      waveMovesUsed: 0,        // moves taken in current wave (for speed bonus)
+      waveDamageTaken: false,  // whether player took damage this wave (for no-damage bonus)
+      breakMovesLeft: 0,       // free moves remaining in between-wave break
+      waveOverlay: null,       // overlay display state
     };
 
     // ─── Init ────────────────────────────────────────────────────────────────────
@@ -203,6 +208,11 @@
       state.phase = 'playing';
       state.boardSize = 20;
       state.hp = 3;
+      state.wave = 1;
+      state.waveMovesUsed = 0;
+      state.waveDamageTaken = false;
+      state.breakMovesLeft = 0;
+      state.waveOverlay = null;
       resetLevel();
       document.getElementById('mode-select').style.display = 'none';
       document.getElementById('keypad').style.display = 'grid';
@@ -217,12 +227,12 @@
       state.enemies = [];
       const count = state.level * 4;
       for (let i = 0; i < count; i++) {
-        const exclude = [state.playerPos, ...state.enemies];
-        state.enemies.push(randomPos(state.boardSize, exclude));
+        const exclude = [state.playerPos, ...state.enemies.map(e => e.pos)];
+        state.enemies.push({ pos: randomPos(state.boardSize, exclude), type: 'normal' });
       }
       // Spawn 2 bonus asterisks at the start of each level
       for (let i = 0; i < 2; i++) {
-        const exclude = [state.playerPos, ...state.enemies, ...state.killed];
+        const exclude = [state.playerPos, ...state.enemies.map(e => e.pos), ...state.killed];
         state.killed.push(randomPos(state.boardSize, exclude));
       }
     }
@@ -293,24 +303,24 @@
     }
 
     function detectCollisions(enemies) {
-      // Returns { survivors: [[r,c],...], newKilled: [[r,c],...] }
+      // Returns { survivors: [{pos,type},...], newKilled: [[r,c],...] }
       const seen = new Map();
       const collided = new Set();
       for (const e of enemies) {
-        const key = `${e[0]},${e[1]}`;
+        const key = `${e.pos[0]},${e.pos[1]}`;
         if (seen.has(key)) {
           collided.add(key);
         } else {
           seen.set(key, e);
         }
       }
-      const survivors = enemies.filter(e => !collided.has(`${e[0]},${e[1]}`));
+      const survivors = enemies.filter(e => !collided.has(`${e.pos[0]},${e.pos[1]}`));
       const newKilled = [...collided].map(k => k.split(',').map(Number));
       return { survivors, newKilled };
     }
 
     function isPlayerCaught(playerPos, enemies) {
-      return enemies.some(e => e[0] === playerPos[0] && e[1] === playerPos[1]);
+      return enemies.some(e => e.pos[0] === playerPos[0] && e.pos[1] === playerPos[1]);
     }
 
     // ─── Canvas ──────────────────────────────────────────────────────────────────
@@ -389,7 +399,7 @@
           let char, color;
           if (r === playerPos[0] && c === playerPos[1]) {
             char = 'O'; color = T.player;
-          } else if (enemies.some(e => e[0] === r && e[1] === c)) {
+          } else if (enemies.some(e => e.pos[0] === r && e.pos[1] === c)) {
             char = 'X'; color = T.enemy;
           } else if (killed.some(k => k[0] === r && k[1] === c)) {
             char = '*'; color = T.killed;
@@ -458,7 +468,7 @@
       ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
 
       drawBoard(boardSize, [10, 10],
-        [[2,2],[4,6],[15,16],[16,4],[6,14]],
+        [{pos:[2,2],type:'normal'},{pos:[4,6],type:'normal'},{pos:[15,16],type:'normal'},{pos:[16,4],type:'normal'},{pos:[6,14],type:'normal'}],
         [[8,8],[12,12]],
         pad, cellSize);
     }
@@ -480,7 +490,10 @@
       }
 
       // 2. Move all enemies toward player
-      state.enemies = state.enemies.map(e => moveEnemy(e, state.playerPos, state.boardSize));
+      state.enemies = state.enemies.map(e => ({
+        pos: moveEnemy(e.pos, state.playerPos, state.boardSize),
+        type: e.type,
+      }));
 
       // 3. Detect enemy-enemy collisions
       const { survivors, newKilled } = detectCollisions(state.enemies);
@@ -489,12 +502,12 @@
 
       // 4. Enemy contact: each enemy on the player's cell deals 1 damage and is destroyed
       const hitEnemies = state.enemies.filter(
-        e => e[0] === state.playerPos[0] && e[1] === state.playerPos[1]
+        e => e.pos[0] === state.playerPos[0] && e.pos[1] === state.playerPos[1]
       );
       if (hitEnemies.length > 0) {
         state.hp -= hitEnemies.length;
         state.enemies = state.enemies.filter(
-          e => !(e[0] === state.playerPos[0] && e[1] === state.playerPos[1])
+          e => !(e.pos[0] === state.playerPos[0] && e.pos[1] === state.playerPos[1])
         );
         if (state.hp <= 0) {
           gameOver();
@@ -507,7 +520,7 @@
         state.score++;
         state.moveCount++;
         if (state.moveCount % 20 === 0) {
-          state.enemies.push(randomPos(state.boardSize, [state.playerPos, ...state.enemies]));
+          state.enemies.push({ pos: randomPos(state.boardSize, [state.playerPos, ...state.enemies.map(e => e.pos)]), type: 'normal' });
         }
       }
 
