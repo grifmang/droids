@@ -382,6 +382,23 @@
       }
     }
 
+    function teleport() {
+      if (state.phase !== 'playing') return;
+      if (state.teleportCharges <= 0) return;
+      // Find a random empty cell (no enemy, no wreckage, no powerup, not current pos)
+      const exclude = [
+        state.playerPos,
+        ...state.enemies.map(e => e.pos),
+        ...state.killed,
+        ...state.powerups.map(p => p.pos),
+      ];
+      const newPos = randomPos(state.boardSize, exclude);
+      state.playerPos = newPos;
+      state.teleportCharges--;
+      updateHud();
+      redraw();
+    }
+
     function detectCollisions(enemies) {
       // Returns { survivors: [{pos,type},...], newKilled: [[r,c],...] }
       const seen = new Map();
@@ -754,6 +771,12 @@
         restartGame();
         return;
       }
+      // Teleport
+      if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        teleport();
+        return;
+      }
       const dir = KEY_MAP[e.key];
       if (dir) {
         e.preventDefault();
@@ -811,6 +834,12 @@
         if (state.phase === 'gameover') { restartGame(); return; }
         if (state.phase === 'playing') step(btn.dataset.dir);
       });
+    });
+
+    document.getElementById('btn-teleport').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (state.phase === 'gameover') { restartGame(); return; }
+      teleport();
     });
 
     // Initial canvas size + attract screen
