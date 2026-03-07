@@ -213,13 +213,14 @@
       let attempts = 0;
       const maxAttempts = boardSize * boardSize * 4;
       const edgeDepth = 3;
+      let inEdge;
       do {
         pos = [
           Math.floor(Math.random() * boardSize),
           Math.floor(Math.random() * boardSize),
         ];
-        const inEdge = pos[0] < edgeDepth || pos[0] >= boardSize - edgeDepth ||
-                       pos[1] < edgeDepth || pos[1] >= boardSize - edgeDepth;
+        inEdge = pos[0] < edgeDepth || pos[0] >= boardSize - edgeDepth ||
+                 pos[1] < edgeDepth || pos[1] >= boardSize - edgeDepth;
         attempts++;
         if (attempts > maxAttempts) break;
       } while (!inEdge || excludeList.some(e => e[0] === pos[0] && e[1] === pos[1]));
