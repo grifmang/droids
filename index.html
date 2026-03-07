@@ -190,7 +190,6 @@
       playerPos: [10, 10],
       enemies: [],             // array of { pos: [row, col], type: string }
       killed: [],              // array of [row, col] (enemy-enemy collision wreckage)
-      moveCount: 0,            // survival mode: track moves for enemy spawning
       hp: 3,                   // player hit points
       wave: 1,                 // current wave number
       waveMovesUsed: 0,        // moves taken in current wave (for speed bonus)
@@ -204,7 +203,6 @@
       state.mode = mode;
       state.level = 1;
       state.score = 0;
-      state.moveCount = 0;
       state.phase = 'playing';
       state.boardSize = 20;
       state.hp = 3;
@@ -577,7 +575,13 @@
       ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
 
       drawBoard(boardSize, [10, 10],
-        [{pos:[2,2],type:'normal'},{pos:[4,6],type:'normal'},{pos:[15,16],type:'normal'},{pos:[16,4],type:'normal'},{pos:[6,14],type:'normal'}],
+        [
+          {pos:[2,2],type:'normal'},
+          {pos:[4,6],type:'normal'},
+          {pos:[15,16],type:'normal'},
+          {pos:[16,4],type:'normal'},
+          {pos:[6,14],type:'normal'},
+        ],
         [[8,8],[12,12]],
         pad, cellSize);
     }
@@ -779,6 +783,9 @@
       state.phase = 'menu';
       state.score = 0;
       state.level = 1;
+      state.wave = 1;
+      state.waveOverlay = null;
+      state.breakMovesLeft = 0;
       updateHud();
       resizeCanvas();
     }
