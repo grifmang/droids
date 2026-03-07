@@ -583,10 +583,6 @@
         if (state.breakMovesLeft === 0) {
           // Break over: spawn next wave
           spawnWave();
-          state.waveOverlay = {
-            text: `WAVE ${state.wave}`,
-            subtext: null,
-          };
         }
         updateHud();
         redraw();
