@@ -192,7 +192,7 @@
       playerPos: [10, 10],
       enemies: [],             // array of { pos: [row, col], type: string }
       killed: [],              // array of [row, col] (enemy-enemy collision wreckage)
-      hp: 3,                   // player hit points
+      hp: 5,                   // player hit points
       wave: 1,                 // current wave number
       waveMovesUsed: 0,        // moves taken in current wave (for speed bonus)
       waveDamageTaken: false,  // whether player took damage this wave (for no-damage bonus)
@@ -409,6 +409,7 @@
 
     function teleport() {
       if (state.phase !== 'playing') return;
+      if (state.mode !== 'survival') return;
       if (state.teleportCharges <= 0) return;
       // Find a random empty cell (no enemy, no wreckage, no powerup, not current pos)
       const exclude = [
@@ -679,13 +680,15 @@
         );
         if (brkPuIdx !== -1) {
           const pu = state.powerups[brkPuIdx];
-          state.powerups.splice(brkPuIdx, 1);
-          if (pu.type === '+') {
-            state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
-          } else if (pu.type === 'S') {
-            state.shield = true;
+          if (pu.type !== 'B') {
+            state.powerups.splice(brkPuIdx, 1);
+            if (pu.type === '+') {
+              state.teleportCharges = Math.min(state.teleportCharges + 1, 5);
+            } else if (pu.type === 'S') {
+              state.shield = true;
+            }
           }
-          // Bomb during break has no effect (no enemies)
+          // Bomb stays on board during break -- no enemies to hit
         }
         state.breakMovesLeft--;
         if (state.breakMovesLeft === 0) {
@@ -928,7 +931,7 @@
     }
 
     // ─── Keypad Buttons ──────────────────────────────────────────────────────────
-    document.querySelectorAll('.kp-btn').forEach(btn => {
+    document.querySelectorAll('.kp-btn:not(#btn-teleport)').forEach(btn => {
       btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         if (state.phase === 'gameover') { restartGame(); return; }
