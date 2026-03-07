@@ -392,10 +392,6 @@
       return { survivors, newKilled };
     }
 
-    function isPlayerCaught(playerPos, enemies) {
-      return enemies.some(e => e.pos[0] === playerPos[0] && e.pos[1] === playerPos[1]);
-    }
-
     // ─── Canvas ──────────────────────────────────────────────────────────────────
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -471,11 +467,10 @@
         for (let c = 0; c < boardSize; c++) {
           const cx = pad + c * cellSize + cellSize / 2;
           const cy = pad + r * cellSize + cellSize / 2;
-          let char, color;
+          let char, color, enemy;
           if (r === playerPos[0] && c === playerPos[1]) {
             char = 'O'; color = T.player;
-          } else if (enemies.some(e => e.pos[0] === r && e.pos[1] === c)) {
-            const enemy = enemies.find(e => e.pos[0] === r && e.pos[1] === c);
+          } else if ((enemy = enemies.find(e => e.pos[0] === r && e.pos[1] === c))) {
             if (enemy.type === 'fast') {
               char = 'F'; color = T.enemyFast;
             } else if (enemy.type === 'random') {
@@ -577,9 +572,9 @@
       drawBoard(boardSize, [10, 10],
         [
           {pos:[2,2],type:'normal'},
-          {pos:[4,6],type:'normal'},
+          {pos:[4,6],type:'fast'},
           {pos:[15,16],type:'normal'},
-          {pos:[16,4],type:'normal'},
+          {pos:[16,4],type:'random'},
           {pos:[6,14],type:'normal'},
         ],
         [[8,8],[12,12]],
