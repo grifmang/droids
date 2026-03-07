@@ -152,6 +152,7 @@
       <span id="score-display"></span>
       <span id="best-display"></span>
       <span id="hp-display"></span>
+      <span id="tp-display"></span>
     </div>
     <div id="play-layout">
       <div id="mode-select">
@@ -315,6 +316,8 @@
       } else {
         document.getElementById('hp-display').textContent = '';
       }
+      document.getElementById('tp-display').textContent =
+        playing && state.mode === 'survival' ? `TP:${state.teleportCharges}` : '';
     }
 
     document.getElementById('btn-levels').addEventListener('click', () => initGame('levels'));
