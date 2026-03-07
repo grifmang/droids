@@ -456,6 +456,10 @@
       score:   '#33ff33',
       best:    '#ffff33',
       prompt:  '#1a6600',
+      powerupTeleport: '#33ffff',
+      powerupShield:   '#ffffff',
+      powerupBomb:     '#ffff33',
+      playerShielded:  '#ffffff',
     };
 
     // ─── Rendering ───────────────────────────────────────────────────────────────
@@ -469,14 +473,14 @@
       ctx.restore();
     }
 
-    function drawBoard(boardSize, playerPos, enemies, killed, pad, cellSize) {
+    function drawBoard(boardSize, playerPos, enemies, killed, powerups, pad, cellSize, shielded) {
       for (let r = 0; r < boardSize; r++) {
         for (let c = 0; c < boardSize; c++) {
           const cx = pad + c * cellSize + cellSize / 2;
           const cy = pad + r * cellSize + cellSize / 2;
-          let char, color, enemy;
+          let char, color, enemy, pu;
           if (r === playerPos[0] && c === playerPos[1]) {
-            char = 'O'; color = T.player;
+            char = 'O'; color = shielded ? T.playerShielded : T.player;
           } else if ((enemy = enemies.find(e => e.pos[0] === r && e.pos[1] === c))) {
             if (enemy.type === 'fast') {
               char = 'F'; color = T.enemyFast;
@@ -487,6 +491,10 @@
             }
           } else if (killed.some(k => k[0] === r && k[1] === c)) {
             char = '*'; color = T.killed;
+          } else if (powerups && (pu = powerups.find(p => p.pos[0] === r && p.pos[1] === c))) {
+            char = pu.type;
+            color = pu.type === '+' ? T.powerupTeleport :
+                    pu.type === 'S' ? T.powerupShield : T.powerupBomb;
           } else {
             char = '.'; color = T.empty;
           }
@@ -508,7 +516,7 @@
       ctx.lineWidth = 1;
       ctx.strokeRect(pad - 0.5, pad - 0.5, inner + 1, inner + 1);
 
-      drawBoard(state.boardSize, state.playerPos, state.enemies, state.killed, pad, cellSize);
+      drawBoard(state.boardSize, state.playerPos, state.enemies, state.killed, state.powerups, pad, cellSize, state.shield);
 
       if (state.phase === 'gameover') drawGameOver();
       else if (state.waveOverlay) drawWaveOverlay();
@@ -585,7 +593,8 @@
           {pos:[6,14],type:'normal'},
         ],
         [[8,8],[12,12]],
-        pad, cellSize);
+        [{pos:[5,10],type:'+'}, {pos:[14,3],type:'S'}, {pos:[11,17],type:'B'}],
+        pad, cellSize, false);
     }
 
     // ─── Game Step ───────────────────────────────────────────────────────────────
